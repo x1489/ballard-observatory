@@ -12,6 +12,7 @@ import { createHistory } from './gen/core/history.mjs';
 import { __state, __stateDirty } from './gen/lib.mjs';
 import { lookupFlight } from './gen/sources/lookup.mjs';
 import { Push, TOPICS } from './push.mjs';
+import { visiblePasses } from './gen/sources/passes.mjs';
 
 const MAX_PER_ALARM = 6;
 const ACTIVE_MS = 10 * 60e3;
@@ -91,6 +92,16 @@ export class Hub extends DurableObject {
       const drafts = await runDetector(src, firstLoad ? null : prev, data, ctx, { timeoutMs: 5000 });
       if (drafts.length) { this.activity.add(drafts, { sourceId: src.id, seedOnly: firstLoad }); this.activityDirty = true; }
     }
+  }
+
+  /** ISS visible passes over Ballard for the next two days, recomputed every 6 hours (or when new elements arrive). */
+  updatePasses() {
+    const e = this.entries.get('satellites');
+    const iss = e && e.data && (e.data.sats || []).find((s) => /ISS \(ZARYA\)/.test(s.name));
+    if (!iss) return;
+    const key = `${iss.l1}|${Math.floor(Date.now() / (6 * 3600e3))}`;
+    if (this.passKey === key) return;
+    try { this.issPasses = visiblePasses(iss, { lat: 47.6687, lon: -122.3847 }, Date.now(), 48); this.passKey = key; } catch (err) { console.warn('[passes]', err && err.message); }
   }
 
   /** The most relevant plain-language finding from the analytics (for the morning brief), cached for 6 hours. */
@@ -177,6 +188,9 @@ export class Hub extends DurableObject {
     const batch = due.slice(0, MAX_PER_ALARM).map(([, s]) => s);
     await Promise.allSettled(batch.map((s) => this.refresh(s)));
     try {
+      this.updatePasses();
+      this.push.passes = this.issPasses;
+      this.push.issCheck(this.issPasses);
       await this.push.morning((id) => (this.entries.get(id) || {}).data ?? null, await this.topInsight());
     } catch (err) { console.warn('[push] morning', err && err.message); }
     if (this.push.pending()) { try { await this.push.drain(); } catch (err) { console.warn('[push] drain', err && err.message); } }

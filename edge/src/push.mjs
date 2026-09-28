@@ -8,6 +8,7 @@ export const TOPICS = {
   brief: 'Morning brief at 7:30 am',
   'bridge:Ballard': 'Ballard Bridge up / down', 'bridge:Fremont': 'Fremont Bridge up / down',
   fire: 'Fire and rescue calls near Ballard', emergency: 'Aircraft emergencies overhead',
+  iss: 'The space station passing over (10 min ahead)',
 };
 const TZ = 'America/Los_Angeles';
 const pacific = (t) => { const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: TZ, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(t).map((x) => [x.type, x.value])); return { date: `${p.year}-${p.month}-${p.day}`, h: +p.hour, m: +p.minute }; };
@@ -152,10 +153,23 @@ export class Push {
     const fire = data('fire911');
     const night = ((fire && fire.incidents) || []).filter((x) => now - x.t < 10 * 3600e3 && /fire|smoke|rescue/i.test(x.type || '') && !/alarm/i.test(x.type || ''));
     if (night.length) parts.push(`${night.length} fire or rescue call${night.length > 1 ? 's' : ''} overnight`);
+    const tonight = (this.passes || []).find((x) => x.rise > now && pacific(x.rise).date === p.date);
+    if (tonight) parts.push(`ISS visible at ${hm(tonight.rise)}, look ${tonight.riseDir}`);
     if (insights && insights.headline) parts.push(`Unusual: ${insights.headline}`);
     await this.st.put('brief:last', p.date);
     if (!parts.length) return;
     this.enqueue('brief', { title: 'Good morning, Ballard', body: parts.join(' · ').slice(0, 240), url: '/#/briefing', tag: `brief-${p.date}` }, `brief:${p.date}`);
+  }
+  /** Ten minutes before a visible ISS pass over Ballard. */
+  issCheck(passes) {
+    const now = Date.now();
+    for (const p of passes || []) {
+      const lead = (p.rise - now) / 60e3;
+      if (lead < 8 || lead > 11.5) continue;
+      this.enqueue('iss', { title: `The space station is visible in ${Math.round(lead)} minutes`,
+        body: `Look ${p.riseDir}: it rises at ${hm(p.rise)}, climbs to ${p.maxEl}° in the ${p.maxDir}, and sets ${p.setDir} about ${Math.max(1, Math.round((p.set - p.rise) / 60e3))} min later.`,
+        url: '/#/sky', tag: `iss-${p.rise}` }, `iss:${p.rise}`);
+    }
   }
   enqueue(topic, payload, key, ids = null) {
     if (this.sent.has(key)) return;
