@@ -37,7 +37,9 @@ try {
 
 if (!HTTP_ONLY) try {
   const b = await launch({ width: 1024, height: 700, chromeArgs: ['--enable-unsafe-swiftshader', '--use-angle=swiftshader', '--ignore-gpu-blocklist'] });
-  await b.goto(`${BASE}/?qa=1`, { settle: 15000 });
+  await b.goto(`${BASE}/?qa=1`, { settle: 8000 });
+  // Software rendering in CI is slow: wait up to a minute for the app to finish booting.
+  for (let i = 0; i < 26; i++) { if (await b.eval('!!(window.__live && window.__live.scene.state.frames > 0)').catch(() => false)) break; await new Promise((r) => setTimeout(r, 2000)); }
   const st = await b.eval(`JSON.stringify({ app: !!window.__live, frames: window.__live ? window.__live.scene.state.frames : 0, boot: document.querySelector('#boot') && document.querySelector('#boot').classList.contains('done') })`).then(JSON.parse);
   check(st.app, 'live app booted (window.__live)');
   check(st.frames > 0, `3D scene rendering (${st.frames} frames)`);

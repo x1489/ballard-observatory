@@ -29,6 +29,10 @@ export function createSearch(app) {
       const routes = new Map();
       for (const b of app.layers.bus.list()) if (b.route && (b.route.short.toLowerCase() === lq || b.route.short.toLowerCase().startsWith(lq) || (b.route.name || '').toLowerCase().includes(lq))) { if (!routes.has(b.route.short)) routes.set(b.route.short, []); routes.get(b.route.short).push(b); }
       for (const [short, list] of routes) out.push({ t: `${short}`, s: `${list.length} bus${list.length > 1 ? 'es' : ''} on the road · ${list[0].route.name || ''}`, badge: short.replace(' Line', ''), fg: '#fff', bg: list[0].spec ? list[0].spec.color : '#555', kind: 'Route', go: ['bus', list[0].id] });
+      if (app.layers.stops && lq.length >= 3) {
+        for (const st of app.layers.stops.all().filter((x) => x.name.toLowerCase().includes(lq)).slice(0, 5))
+          out.push({ t: st.name, s: `Bus stop #${st.id} · live arrivals`, icon: 'bus', fg: 'var(--bus)', bg: 'rgba(255,176,32,.14)', kind: 'Stop', go: ['stop', st.id] });
+      }
       for (const b of ['Ballard', 'Fremont']) if (`${b} bridge`.toLowerCase().includes(lq)) out.push({ t: `${b} Bridge`, s: 'Drawbridge status, openings, camera', icon: 'bridge', fg: 'var(--bridge)', bg: 'rgba(251,146,60,.14)', kind: 'Bridge', go: ['bridge', b] });
       if (/^(iss|space|station|satel)/.test(lq)) { const iss = app.sky.iss(); if (iss) out.push({ t: 'International Space Station', s: 'Where it is and when to see it', icon: 'sat', fg: 'var(--sky)', bg: 'rgba(167,139,250,.14)', kind: 'Sky', go: ['sat', String(iss.id)] }); }
       if (/^(wea|rain|temp|tide|sun)/.test(lq)) out.push({ t: 'Weather now', s: 'Conditions, rain, tide, sunset', icon: 'cloud', fg: 'var(--weather)', bg: 'rgba(125,211,252,.14)', kind: 'Weather', go: ['weather', 'now'] });

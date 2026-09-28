@@ -180,6 +180,49 @@ export function busCard(app, id) {
   return { kind: 'bus', id, mount(el) { root = el; paint(); }, tick, target: () => L.now(id), label: () => { const o = L.get(id); return o && o.route ? `${o.route.short} ${o.info ? `→ ${o.info.headsign}` : ''}` : `Bus ${id}`; } };
 }
 
+// ------------------------------------------------------------------ bus stop (live arrivals board)
+export function stopCard(app, stopId) {
+  let root = null;
+  const stop = () => app.transit.stop(stopId);
+  function arrivals() {
+    const now = Date.now(), out = [];
+    for (const b of app.layers.bus.list()) {
+      const hit = (b.rec.next || []).find((x) => x[0] === stopId && x[2] > now - 30e3);
+      if (hit) out.push({ b, t: hit[2], delay: hit[3] });
+    }
+    return out.sort((a, c) => a.t - c.t);
+  }
+  function paint() {
+    const s = stop();
+    if (!root) return;
+    if (!s) { root.innerHTML = '<div class="card"><h1>Bus stop</h1><p class="h-sub">Unknown stop.</p></div>'; return; }
+    root.innerHTML = `<div class="card"><div class="kind" style="color:var(--bus)">${icon('bus')} Bus stop · #${esc(stopId)}</div>
+      <h1 style="font-size:24px">${esc(s.name)}</h1><div class="h-sub">Live arrivals from King County Metro's real-time feed</div>
+      <div class="sec"><h3>Arriving <span data-k="upd"></span></h3><div class="rows" style="padding:0" data-k="list"></div></div>
+      <div class="actions"><button class="btn" data-act="track">${icon('target')} Show</button><a class="btn" href="https://kingcounty.gov/en/dept/metro" target="_blank" rel="noopener">${icon('link')} Schedules</a></div>
+      <div class="fine">Only buses already on their way (reporting live) are listed; tap the bell to be alerted about 5 minutes before one gets here.</div></div>`;
+    tick();
+  }
+  function tick() {
+    if (!root) return;
+    const el = root.querySelector('[data-k="list"]');
+    if (!el) return;
+    const rows = arrivals();
+    const watched = (app.stopWatch || []).filter((w) => w.stop === stopId);
+    const html = rows.map(({ b, t, delay }) => {
+      const r = b.route || {}, on = watched.some((w) => !w.route || w.route === b.rec.route);
+      return `<div class="row" data-open="bus:${esc(b.id)}" style="cursor:pointer"><div class="b" style="background:${esc(b.spec.color)};color:#fff">${esc((r.short || '?').replace(' Line', ''))}</div>
+        <div><div class="t">${esc(b.info && b.info.headsign ? `to ${b.info.headsign}` : r.name || '')}</div><div class="s">${isNum(delay) ? (Math.abs(delay) < 90 ? 'on time' : delay > 0 ? `${Math.round(delay / 60)} min late` : `${Math.round(-delay / 60)} min early`) : 'live'} · bus ${esc(b.id)}</div></div>
+        <div class="r" style="display:flex;align-items:center;gap:8px"><span>${esc(inMin(t))}<small>${esc(time(t))}</small></span>
+        <button class="btn ${on ? 'on' : ''}" style="padding:6px" title="Alert me ~5 min before a ${esc(r.short || '')} gets here" data-act="watch-stop" data-route="${esc(b.rec.route || '')}" data-label="${esc(r.short || '')}">${icon('bell', 'ic', 'style="width:14px;height:14px"')}</button></div></div>`;
+    }).join('') || '<div class="fine" style="margin:0">No buses reporting on their way here right now.</div>';
+    if (el.innerHTML !== html) el.innerHTML = html;
+    const u = root.querySelector('[data-k="upd"]');
+    if (u) u.textContent = `${rows.length} on the way`;
+  }
+  return { kind: 'stop', id: stopId, mount(el) { root = el; paint(); }, tick, target: () => { const s = stop(); return s ? { lon: s.lon, lat: s.lat, alt: 0, heading: 0 } : null; }, label: () => (stop() || {}).name || 'Stop' };
+}
+
 // ------------------------------------------------------------------ train
 function trainDelay(st) {
   const sch = st.schDep ?? st.schArr, est = st.dep ?? st.arr;

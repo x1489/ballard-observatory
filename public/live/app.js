@@ -11,11 +11,12 @@ import { createTrains } from './layers/trains.js';
 import { createBridges } from './layers/bridges.js';
 import { createIncidents } from './layers/incidents.js';
 import { createTrees } from './layers/trees.js';
+import { createStops } from './layers/stops.js';
 import { createSky } from './sky.js';
 import { nextSunCrossing } from './sun.js';
 import { esc, num, time, inMin, isNum, compass, WX, dur, ago } from './fmt.js';
 import { icon } from './ui/icons.js';
-import { aircraftCard, busCard, trainCard, bridgeCard, incidentCard, satCard, weatherCard } from './ui/cards.js';
+import { aircraftCard, busCard, stopCard, trainCard, bridgeCard, incidentCard, satCard, weatherCard } from './ui/cards.js';
 import { createFollows, createIsland, notify } from './ui/island.js';
 import { createVision, MODES } from './ui/vision.js';
 import { createDirector } from './ui/director.js';
@@ -130,6 +131,7 @@ function select(kind, id, { focus = true, card: showCard = true } = {}) {
   air.select(kind === 'aircraft' ? id : null);
   app.layers.bus && app.layers.bus.select(kind === 'bus' ? id : null);
   app.layers.train && app.layers.train.select(kind === 'train' ? id : null);
+  app.layers.stops && app.layers.stops.select(kind === 'stop' ? id : null);
   if (!kind) return;
   if (focus) {
     const m = scene.map;
@@ -156,6 +158,7 @@ function open(kind, id) {
   if (kind === 'aircraft') c = air.record(id) ? aircraftCard(app, id) : null;
   else if (kind === 'bus') c = app.layers.bus && app.layers.bus.get(id) ? busCard(app, id) : null;
   else if (kind === 'train') c = trainCard(app, id);
+  else if (kind === 'stop') c = app.transit.stop(id) ? stopCard(app, id) : null;
   else if (kind === 'bridge') c = bridgeCard(app, id);
   else if (kind === 'incident') c = incidentCard(app, id);
   else if (kind === 'sat') c = satCard(app, id);
@@ -167,6 +170,12 @@ function open(kind, id) {
   mountCard(c, `#/${kind}/${encodeURIComponent(id)}`);
   if (kind === 'bridge') { const b = app.layers.bridge.get(id); if (b) scene.flyTo({ center: b.center, zoom: 17.3, pitch: 64, bearing: scene.map.getBearing() }); }
   if (kind === 'incident') { const x = app.layers.incidents.get(id); if (x) scene.flyTo({ center: [x.lon, x.lat], zoom: 16.8, pitch: 60 }); }
+  if (kind === 'stop') {
+    const st = app.transit.stop(id), c = scene.map.getCenter();
+    app.layers.stops && app.layers.stops.select(id);
+    const far = st && Math.hypot((st.lon - c.lng) * 75000, (st.lat - c.lat) * 111000) > 300;
+    if (st && (far || scene.map.getZoom() < 16.5)) scene.flyTo({ center: [st.lon, st.lat], zoom: Math.max(17.2, scene.map.getZoom()), pitch: 60 });
+  }
 }
 async function openBriefingPage(kind, id) {
   clearInterval(cardTimer); card = null;
@@ -196,6 +205,16 @@ sheetBody.addEventListener('click', (e) => {
     else if (act === 'cockpit') scene.follow(card.target, 'cockpit');
     else if (act === 'radar') { setRadar(!radarOn); a.classList.toggle('on', radarOn); }
     else if (act === 'sky') skyview.show();
+    else if (act === 'watch-stop' && card.kind === 'stop') {
+      const st = app.transit.stop(card.id);
+      const w = { stop: card.id, name: st ? st.name : card.id, route: a.dataset.route || null, label: a.dataset.label || '' };
+      alerts.toggleStop(w).then((on) => {
+        app.stopWatch = on ? [...(app.stopWatch || []), w] : (app.stopWatch || []).filter((x) => !(x.stop === w.stop && x.route === w.route));
+        toast(on ? `You'll get an alert when a ${w.label} is ~5 min from ${w.name}` : 'Stop alert removed');
+        card.tick();
+      }).catch((err) => toast(err.message));
+      e.stopPropagation();
+    }
     else if (act === 'watch' && card.kind === 'bus') {
       const o = app.layers.bus.get(card.id);
       const w = { stop: a.dataset.stop, name: a.dataset.name, route: o && o.rec ? o.rec.route : null, label: o && o.route ? o.route.short : '' };
@@ -275,6 +294,7 @@ function onPick(info) {
   else if (o.kind === 'train' && o.id) open('train', o.id);
   else if (o.kind === 'bridge') open('bridge', o.b ? o.b.name : o.id);
   else if (o.kind === 'incident') open('incident', o.id);
+  else if (o.kind === 'stop') open('stop', o.id);
 }
 
 // Aircraft positions older than 3 minutes: the feed (or the relay behind it) is down. Say so rather than show nothing.
@@ -478,6 +498,7 @@ function onData(ids) {
   app.layers.incidents = createIncidents();
   app.layers.trees = createTrees();
   scene.add('trees', (ctx) => app.layers.trees.produce(ctx));
+  if (transit) { app.layers.stops = createStops(transit); scene.add('stops', (ctx) => app.layers.stops.produce(ctx)); }
   scene.add('bridges', (ctx) => bridgeLayer.produce(ctx));
   scene.add('incidents', (ctx) => app.layers.incidents.produce(ctx));
   scene.add('trains', (ctx) => app.layers.train.produce(ctx));
