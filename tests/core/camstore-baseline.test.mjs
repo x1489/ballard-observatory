@@ -80,7 +80,8 @@ describe('baseline', () => {
   });
   it('seeds from history series', () => {
     const b = createBaseline({ log: { warn() {} } });
-    const t = Date.now() - 5 * 3600e3;
+    // two samples a minute apart, both inside one clock hour (not straddling an hour boundary)
+    const t = Math.floor((Date.now() - 5 * 3600e3) / 3600e3) * 3600e3 + 60e3;
     b.seed({ a: [[t, 1], [t + 60e3, 3]] });
     assert.equal(b._buckets.get('a').size, 1);
     const [[, [sum, n]]] = [...b._buckets.get('a').entries()];
