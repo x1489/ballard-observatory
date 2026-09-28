@@ -36,19 +36,23 @@ export class Push {
     try { const u = new URL(sub.endpoint); if (u.protocol !== 'https:') throw new Error(); host = u.hostname; } catch { return { error: 'bad endpoint', status: 400 }; }
     if (!PUSH_HOSTS.test(host)) return { error: 'unsupported push service', status: 400 };
     const topics = [...new Set((body.topics || []).filter((t) => t in TOPICS))];
+    // Bus stop alerts: "tell me when a bus is about 5 minutes from this stop" (optionally one route).
+    const watch = (Array.isArray(body.watch) ? body.watch : []).filter((w) => w && /^\d{1,7}$/.test(String(w.stop)) && (!w.route || /^\d{1,7}$/.test(String(w.route))))
+      .slice(0, 5).map((w) => ({ stop: String(w.stop), route: w.route ? String(w.route) : null, name: String(w.name || '').slice(0, 80), label: String(w.label || '').slice(0, 14) }));
     const subs = await this.load();
     const id = await sha(sub.endpoint);
-    if (!topics.length) { subs.delete(id); await this.st.delete(`ps:${id}`); return { ok: true, topics: [] }; }
+    if (!topics.length && !watch.length) { subs.delete(id); await this.st.delete(`ps:${id}`); this.hot = null; return { ok: true, topics: [], watch: [] }; }
     if (!subs.has(id) && subs.size >= MAX_SUBS) return { error: 'alerts are full right now', status: 503 };
-    const rec = { sub: { endpoint: sub.endpoint, keys: { p256dh: String(sub.keys.p256dh), auth: String(sub.keys.auth) } }, topics, created: (subs.get(id) || {}).created || Date.now() };
+    const rec = { sub: { endpoint: sub.endpoint, keys: { p256dh: String(sub.keys.p256dh), auth: String(sub.keys.auth) } }, topics, watch, created: (subs.get(id) || {}).created || Date.now() };
     subs.set(id, rec);
+    this.hot = null;
     await this.st.put(`ps:${id}`, rec);
-    return { ok: true, topics };
+    return { ok: true, topics, watch };
   }
   async status(endpoint) {
     const subs = await this.load();
     const rec = subs.get(await sha(String(endpoint || '')));
-    return { topics: rec ? rec.topics : [] };
+    return { topics: rec ? rec.topics : [], watch: rec ? rec.watch || [] : [] };
   }
   /** A test notification to one subscriber (the "send me a test" button), at most once a minute. */
   async test(endpoint) {
@@ -64,6 +68,18 @@ export class Push {
     const r = await sendPush(rec.sub, { title: 'Ballard alerts are on', body: `You'll hear about: ${rec.topics.map((t) => TOPICS[t]).join(', ')}.`, url: '/#/alerts', tag: 'test' }, vapid, { ttl: 300 });
     if (r.gone) { subs.delete(id); await this.st.delete(`ps:${id}`); }
     return { ok: r.ok, status: r.ok ? 200 : 502, pushStatus: r.status };
+  }
+  /** Source ids to keep refreshing at their active rate because someone has an alert that depends on them. */
+  async keepFresh() {
+    if (this.hot) return this.hot;
+    const subs = await this.load(), hot = new Set();
+    for (const r of subs.values()) {
+      if (r.topics.includes('fire')) hot.add('fire911');
+      if (r.topics.includes('emergency')) hot.add('aircraft');
+      if ((r.watch || []).length) hot.add('buses');
+    }
+    this.hot = hot;
+    return hot;
   }
   /** Compare a source's previous and new data; queue alerts for what changed. */
   async observe(id, prev, next) {
@@ -86,6 +102,24 @@ export class Push {
         this.enqueue('fire', { title: x.type, body: `${x.address || 'Ballard'}${x.units ? ` · ${String(x.units).split(/\s+/).length} units` : ''}`, url: `/#/incident/sfd-${x.id}`, tag: `sfd-${x.id}` }, `fire:${x.id}`);
       }
     }
+    if (id === 'buses') {
+      const subs = await this.load();
+      const watching = [...subs.entries()].filter(([, r]) => (r.watch || []).length);
+      if (watching.length) {
+        for (const v of next.vehicles || []) {
+          for (const [stopId, , t, delay] of v.next || []) {
+            const min = (t - now) / 60e3;
+            if (!(min >= 3.5 && min < 7)) continue;
+            const ids = watching.filter(([, r]) => r.watch.some((w) => w.stop === stopId && (!w.route || w.route === v.route))).map(([sid]) => sid);
+            if (!ids.length) continue;
+            const w = subs.get(ids[0]).watch.find((x) => x.stop === stopId && (!x.route || x.route === v.route));
+            const late = isNum(delay) && delay >= 120 ? ` · ${Math.round(delay / 60)} min late` : '';
+            this.enqueue(`stop:${stopId}`, { title: `${w.label || 'Your bus'} in ${Math.round(min)} min`, body: `${w.name || 'Your stop'}${late}`, url: `/#/bus/${v.id}`, tag: `stop-${stopId}` },
+              `bus:${v.trip}:${stopId}`, ids);
+          }
+        }
+      }
+    }
     if (id === 'aircraft') {
       const had = new Set(((prev && prev.aircraft) || []).filter((a) => a.emergency).map((a) => `${a.hex}:${a.squawk}`));
       for (const a of next.aircraft || []) {
@@ -95,11 +129,11 @@ export class Push {
       }
     }
   }
-  enqueue(topic, payload, key) {
+  enqueue(topic, payload, key, ids = null) {
     if (this.sent.has(key)) return;
     this.sent.add(key);
-    if (this.sent.size > 2000) this.sent = new Set([...this.sent].slice(-1000));
-    this.queue.push({ topic, payload, idx: 0, at: Date.now() });
+    if (this.sent.size > 4000) this.sent = new Set([...this.sent].slice(-2000));
+    this.queue.push({ topic, payload, ids, idx: 0, at: Date.now() });
   }
   pending() { return this.queue.length > 0; }
   /** Send up to PER_TICK notifications; called from the Hub's alarm. */
@@ -111,12 +145,12 @@ export class Push {
     while (this.queue.length && budget > 0) {
       const job = this.queue[0];
       if (Date.now() - job.at > 15 * 60e3) { this.queue.shift(); continue; } // stale news
-      const targets = subs.filter(([, r]) => r.topics.includes(job.topic));
+      const targets = job.ids ? subs.filter(([sid]) => job.ids.includes(sid)) : subs.filter(([, r]) => r.topics.includes(job.topic));
       const batch = targets.slice(job.idx, job.idx + budget);
       await Promise.all(batch.map(async ([id, r]) => {
         try {
           const res = await sendPush(r.sub, job.payload, vapid, { ttl: 900, urgency: job.topic === 'emergency' || job.topic === 'fire' ? 'high' : 'normal', topic: job.payload.tag });
-          if (res.gone) { this.subs.delete(id); await this.st.delete(`ps:${id}`); } else if (res.ok) sent++;
+          if (res.gone) { this.subs.delete(id); this.hot = null; await this.st.delete(`ps:${id}`); } else if (res.ok) sent++;
         } catch { /* try the next one */ }
       }));
       budget -= batch.length; job.idx += batch.length;

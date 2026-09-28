@@ -166,8 +166,10 @@ export function busCard(app, id) {
     set('status', `${status(late[0], late[1])} ${v.status === 'stopped' ? status('muted', 'At a stop') : now && now.moving ? status('', 'Moving') : ''}`);
     const next = (v.next || []).filter((x) => x[2] > Date.now() - 30e3).slice(0, 7);
     const stopName = (sid) => { const s = app.transit.stop(sid); return s ? s.name : `Stop ${sid}`; };
+    const watched = new Set((app.stopWatch || []).filter((w) => !w.route || w.route === v.route).map((w) => w.stop));
     set('stops', next.map(([sid, , t, dl], i) => `<div class="st ${i === 0 ? 'now' : ''}"><div class="n">${esc(stopName(sid))}${i === 0 && v.status === 'stopped' ? '<small>at this stop now</small>' : ''}</div>
-      <div class="t">${esc(inMin(t))}<small class="${isNum(dl) && dl >= 90 ? 'late' : 'ontime'}">${esc(time(t))}</small></div></div>`).join('') || '<div class="fine">No upcoming stops reported.</div>');
+      <div class="t" style="display:flex;align-items:center;gap:8px"><span>${esc(inMin(t))}<small class="${isNum(dl) && dl >= 90 ? 'late' : 'ontime'}">${esc(time(t))}</small></span>
+      <button class="btn ${watched.has(sid) ? 'on' : ''}" style="padding:6px" title="Alert me ~5 min before a ${esc((o.route && o.route.short) || '')} reaches this stop" data-act="watch" data-stop="${esc(sid)}" data-name="${esc(stopName(sid))}">${icon('bell', 'ic', 'style="width:14px;height:14px"')}</button></div></div>`).join('') || '<div class="fine">No upcoming stops reported.</div>');
     set('upd', `updated ${ago(v.t)}`);
     const next0 = next[0];
     set('grid', [

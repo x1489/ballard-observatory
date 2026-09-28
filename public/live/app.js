@@ -196,6 +196,15 @@ sheetBody.addEventListener('click', (e) => {
     else if (act === 'cockpit') scene.follow(card.target, 'cockpit');
     else if (act === 'radar') { setRadar(!radarOn); a.classList.toggle('on', radarOn); }
     else if (act === 'sky') skyview.show();
+    else if (act === 'watch' && card.kind === 'bus') {
+      const o = app.layers.bus.get(card.id);
+      const w = { stop: a.dataset.stop, name: a.dataset.name, route: o && o.rec ? o.rec.route : null, label: o && o.route ? o.route.short : '' };
+      alerts.toggleStop(w).then((on) => {
+        app.stopWatch = on ? [...(app.stopWatch || []), w] : (app.stopWatch || []).filter((x) => !(x.stop === w.stop && x.route === w.route));
+        toast(on ? `You'll get an alert when a ${w.label} is ~5 min from ${w.name}` : 'Stop alert removed');
+        card.tick();
+      }).catch((err) => toast(err.message));
+    }
     return;
   }
   const go = e.target.closest('[data-go]');
@@ -493,6 +502,7 @@ function onData(ids) {
     else if (kind) setTimeout(() => open(kind, decodeURIComponent(id)), 400);
   };
   app.route();
+  alerts.current().then((c) => { app.stopWatch = c.watch || []; }).catch(() => {});
   if (q.get('director') === '1') director.start();
   if (q.get('vision')) vision.set(q.get('vision'));
   setInterval(chips, 2000);

@@ -219,10 +219,15 @@ export function createScene(container, { year = 2025, onPick, onHover, onUserMov
   for (const ev of ['dragstart', 'zoomstart', 'rotatestart', 'pitchstart']) map.on(ev, userMoved);
 
   // ---------------------------------------------------------------- the frame loop
-  const minGap = mobile ? 1000 / 40 : 0;
+  // Frame budget: 60 fps on desktops, 40 on phones; after a minute without a touch, 24 (things still glide, the
+  // battery lasts). Any input restores the full rate.
+  let lastInput = performance.now();
+  for (const ev of ['pointerdown', 'pointermove', 'wheel', 'keydown', 'touchstart']) addEventListener(ev, () => { lastInput = performance.now(); }, { passive: true });
   function frame(ts) {
     requestAnimationFrame(frame);
     if (S.paused || document.hidden) return;
+    const idle = ts - lastInput > 60_000 && !S.follow && !document.body.classList.contains('director');
+    const minGap = idle ? 1000 / 24 : mobile ? 1000 / 40 : 0;
     if (minGap && ts - S.lastFrame < minGap) return;
     const dt = ts - S.lastFrame;
     S.lastFrame = ts;
@@ -259,6 +264,7 @@ export function createScene(container, { year = 2025, onPick, onHover, onUserMov
   }
   if (!QA) setInterval(() => {
     if (document.hidden || S.paused || !S.lastFrame || performance.now() - S.lastFrame > 1000) return;
+    if (performance.now() - lastInput > 60_000) return; // idle frame cap in force: nothing to judge
     const cap = mobile ? 40 : 60;
     if (S.fps < cap * 0.45) { fast = 0; if (++slow >= 2 && level < LEVELS.length - 1) { setLevel(level + 1); slow = 0; } }
     else if (S.fps > cap * 0.85) { slow = 0; if (++fast >= 4 && level > 0) { setLevel(level - 1); fast = 0; } }

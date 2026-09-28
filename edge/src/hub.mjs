@@ -147,10 +147,11 @@ export class Hub extends DurableObject {
   async alarm() {
     const now = Date.now();
     const active = this.active(now);
+    const hot = await this.push.keepFresh().catch(() => new Set()); // feeds behind someone's alerts stay fresh
     const due = [];
     for (const s of this.sources) {
       if (this.inflight.has(s.id) || this.relayed(s, now)) continue;
-      const d = dueAt(s, this.entry(s.id), { active, now });
+      const d = dueAt(s, this.entry(s.id), { active: active || hot.has(s.id), now });
       if (d <= now) due.push([d, s]);
     }
     due.sort((a, b) => (b[1].background ? 1 : 0) - (a[1].background ? 1 : 0) || a[0] - b[0]);
@@ -160,7 +161,7 @@ export class Hub extends DurableObject {
     try { await this.persist(); } catch (err) { console.error('[persist]', err && err.message); }
     const t = Date.now();
     let next = t + 5 * 60e3;
-    for (const s of this.sources) if (!this.relayed(s, t)) next = Math.min(next, dueAt(s, this.entry(s.id), { active: this.active(t), now: t }));
+    for (const s of this.sources) if (!this.relayed(s, t)) next = Math.min(next, dueAt(s, this.entry(s.id), { active: this.active(t) || hot.has(s.id), now: t }));
     const floor = due.length > batch.length || this.push.pending() ? 250 : 1500;
     await this.ctx.storage.setAlarm(Math.max(t + floor, next));
   }
