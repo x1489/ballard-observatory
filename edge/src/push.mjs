@@ -5,9 +5,14 @@
 import { sendPush } from './gen/sources/webpush.mjs';
 
 export const TOPICS = {
+  brief: 'Morning brief at 7:30 am',
   'bridge:Ballard': 'Ballard Bridge up / down', 'bridge:Fremont': 'Fremont Bridge up / down',
   fire: 'Fire and rescue calls near Ballard', emergency: 'Aircraft emergencies overhead',
 };
+const TZ = 'America/Los_Angeles';
+const pacific = (t) => { const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: TZ, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(t).map((x) => [x.type, x.value])); return { date: `${p.year}-${p.month}-${p.day}`, h: +p.hour, m: +p.minute }; };
+const hm = (t) => new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' }).format(t).replace(' AM', ' am').replace(' PM', ' pm');
+const WX = (c) => (c === 0 ? 'clear' : c <= 1 ? 'mostly clear' : c === 2 ? 'partly cloudy' : c === 3 ? 'cloudy' : c <= 48 ? 'foggy' : c <= 57 ? 'drizzly' : c <= 67 ? 'rainy' : c <= 77 ? 'snowy' : c <= 82 ? 'showery' : 'stormy');
 const PUSH_HOSTS = /(^|\.)(fcm\.googleapis\.com|push\.services\.mozilla\.com|web\.push\.apple\.com|notify\.windows\.com|push\.apple\.com)$/;
 const MAX_SUBS = 5000, PER_TICK = 30;
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
@@ -128,6 +133,29 @@ export class Push {
           url: `/#/aircraft/${a.hex}`, tag: `em-${a.hex}` }, `em:${a.hex}:${a.squawk}`);
       }
     }
+  }
+  /** Once a day at 7:30 am Pacific: the morning brief for 'brief' subscribers. data(id) reads a live feed. */
+  async morning(data, insights) {
+    const now = Date.now(), p = pacific(now);
+    if (p.h * 60 + p.m < 7 * 60 + 30 || p.h >= 11) return;
+    if ((await this.st.get('brief:last')) === p.date) return;
+    const subs = await this.load();
+    if (![...subs.values()].some((r) => r.topics.includes('brief'))) { await this.st.put('brief:last', p.date); return; }
+    const parts = [];
+    const w = data('weather');
+    if (w && w.current) {
+      const d0 = (w.daily || [])[0] || {};
+      parts.push(`${Math.round(w.current.tempF)}°, ${WX(w.current.code)}${isNum(d0.hiF) ? `, high ${Math.round(d0.hiF)}°` : ''}${w.rainStartsAt ? `; rain from about ${hm(w.rainStartsAt)}` : ''}`);
+    }
+    const odds = data('bridge-odds');
+    if (odds && odds.restrictionText) parts.push(`Ballard Bridge: ${odds.restrictionText.toLowerCase()}`);
+    const fire = data('fire911');
+    const night = ((fire && fire.incidents) || []).filter((x) => now - x.t < 10 * 3600e3 && /fire|smoke|rescue/i.test(x.type || '') && !/alarm/i.test(x.type || ''));
+    if (night.length) parts.push(`${night.length} fire or rescue call${night.length > 1 ? 's' : ''} overnight`);
+    if (insights && insights.headline) parts.push(`Unusual: ${insights.headline}`);
+    await this.st.put('brief:last', p.date);
+    if (!parts.length) return;
+    this.enqueue('brief', { title: 'Good morning, Ballard', body: parts.join(' · ').slice(0, 240), url: '/#/briefing', tag: `brief-${p.date}` }, `brief:${p.date}`);
   }
   enqueue(topic, payload, key, ids = null) {
     if (this.sent.has(key)) return;

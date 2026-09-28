@@ -93,6 +93,25 @@ export class Hub extends DurableObject {
     }
   }
 
+  /** The most relevant plain-language finding from the analytics (for the morning brief), cached for 6 hours. */
+  async topInsight() {
+    const p = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hourCycle: 'h23', hour: '2-digit' }).format(Date.now());
+    if (+p < 7 || +p >= 11) return null; // only needed around the morning brief
+    if (this._ins && Date.now() - this._ins.at < 6 * 3600e3) return this._ins.v;
+    let v = null;
+    try {
+      const r = await fetch(`${this.env.OBS_BASE}/insights.json`, { cf: { cacheTtl: 3600 } });
+      if (r.ok) {
+        const j = await r.json();
+        const c = (j.insights || []).filter((i) => i.plain && i.plain.headline && i.confidence !== 'low' && ['hotspot', 'anomaly', 'change'].includes(i.type))
+          .sort((a, b) => (b.plain.relevance || 0) - (a.plain.relevance || 0))[0];
+        v = c ? { headline: c.plain.headline } : null;
+      }
+    } catch { v = null; }
+    this._ins = { at: Date.now(), v };
+    return v;
+  }
+
   /** A relay pushed this source recently enough that fetching it here (and being refused) is pointless. */
   relayed(src, now = Date.now()) {
     const t = this.pushedAt.get(src.id);
@@ -157,6 +176,9 @@ export class Hub extends DurableObject {
     due.sort((a, b) => (b[1].background ? 1 : 0) - (a[1].background ? 1 : 0) || a[0] - b[0]);
     const batch = due.slice(0, MAX_PER_ALARM).map(([, s]) => s);
     await Promise.allSettled(batch.map((s) => this.refresh(s)));
+    try {
+      await this.push.morning((id) => (this.entries.get(id) || {}).data ?? null, await this.topInsight());
+    } catch (err) { console.warn('[push] morning', err && err.message); }
     if (this.push.pending()) { try { await this.push.drain(); } catch (err) { console.warn('[push] drain', err && err.message); } }
     try { await this.persist(); } catch (err) { console.error('[persist]', err && err.message); }
     const t = Date.now();
