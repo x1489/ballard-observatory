@@ -1,0 +1,22 @@
+# Checks the hosted site every hour (pages, live API, analytics outputs). Three attempts ten minutes apart before
+# failing, so a blip doesn't raise an alarm; a failure emails the repository owner.
+name: Uptime
+on:
+  schedule:
+    - cron: '41 * * * *'
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Smoke test (with retries)
+        run: |
+          for i in 1 2 3; do
+            if node tools/smoke.mjs --http; then exit 0; fi
+            [ "$i" = 3 ] || sleep 600
+          done
+          exit 1

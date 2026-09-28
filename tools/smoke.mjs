@@ -1,9 +1,11 @@
 // Smoke test for a running deployment (local or hosted): the pages, the live API, the analytics outputs, and a
 // headless page load of the live app with no script errors and the 3D scene rendering. Exit code 1 on failure.
-//   node tools/smoke.mjs [baseUrl]   (default: the hosted site)
+//   node tools/smoke.mjs [baseUrl] [--http]   (default: the hosted site; --http skips the headless-browser check)
 import { launch } from './cdp.mjs';
 
-const BASE = (process.argv[2] || 'https://ballard-observatory.ballard-observatory-edge.workers.dev').replace(/\/$/, '');
+const args = process.argv.slice(2);
+const HTTP_ONLY = args.includes('--http');
+const BASE = (args.find((a) => !a.startsWith('--')) || 'https://ballard-observatory.ballard-observatory-edge.workers.dev').replace(/\/$/, '');
 const fails = [];
 const check = (ok, what) => { console.log(`${ok ? '✓' : '✗'} ${what}`); if (!ok) fails.push(what); };
 async function get(p, as = 'text') {
@@ -27,7 +29,7 @@ try {
   check(ins.status === 200 && ins.body && Array.isArray(ins.body.insights), 'analytics outputs (insights.json)');
 } catch (e) { check(false, `HTTP checks threw: ${e.message}`); }
 
-try {
+if (!HTTP_ONLY) try {
   const b = await launch({ width: 1024, height: 700, chromeArgs: ['--enable-unsafe-swiftshader', '--use-angle=swiftshader', '--ignore-gpu-blocklist'] });
   await b.goto(`${BASE}/?qa=1`, { settle: 15000 });
   const st = await b.eval(`JSON.stringify({ app: !!window.__live, frames: window.__live ? window.__live.scene.state.frames : 0, boot: document.querySelector('#boot') && document.querySelector('#boot').classList.contains('done') })`).then(JSON.parse);
