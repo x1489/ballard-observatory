@@ -380,7 +380,7 @@ async function fetchBridgeOdds() {
 
 export default [
   {
-    id: 'aircraft', title: 'Aircraft overhead (ADS-B)', ttl: 15, idleTtl: 300, fetch: fetchAircraft,
+    id: 'aircraft', title: 'Aircraft overhead (ADS-B)', ttl: 15, idleTtl: 300, persist: false, fetch: fetchAircraft,
     metrics: (d) => ({ 'aircraft.count': isNum(d && d.count) ? d.count : null, 'aircraft.airborne': isNum(d && d.airborne) ? d.airborne : null }),
     detect: aircraftDetect,
   },

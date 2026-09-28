@@ -90,7 +90,7 @@ export function createScene(container, { year = 2025, onPick, onHover, onUserMov
   const producers = new Map();
   // The style is usable (layers exist) long before every tile has loaded; don't wait for 'load'.
   const styleReady = () => !!(map.style && map.style._loaded);
-  const S = { sunTime, look: lookAt(sunPosition(sunTime ?? Date.now()).elevation), sun: sunPosition(sunTime ?? Date.now()), cloud: 0, follow: null, fps: 0, frames: 0, paused: false, lastFrame: 0,
+  const S = { quality: 0, sunTime, look: lookAt(sunPosition(sunTime ?? Date.now()).elevation), sun: sunPosition(sunTime ?? Date.now()), cloud: 0, follow: null, fps: 0, frames: 0, paused: false, lastFrame: 0,
     radar: { frames: [], idx: 0, on: false, t0: 0 }, elevCache: new Map() };
 
   // ---------------------------------------------------------------- the look (sun-driven grading)
@@ -242,6 +242,29 @@ export function createScene(container, { year = 2025, onPick, onHover, onUserMov
     stepRadar(ts);
   }
 
+  // Adaptive quality: phones that can't keep up step down resolution, then terrain, rather than stutter; they step
+  // back up when there's headroom. (Off in QA runs, which render in software.)
+  const QA = /[?&]qa=1/.test(location.search);
+  const LEVELS = [{ px: Math.min(devicePixelRatio || 1, 2), deckPx: mobile ? 1.5 : true, terrain: true }, { px: 1.5, deckPx: 1, terrain: true },
+    { px: 1, deckPx: 1, terrain: true }, { px: 1, deckPx: 1, terrain: false }];
+  let level = 0, slow = 0, fast = 0;
+  function setLevel(n) {
+    level = Math.max(0, Math.min(LEVELS.length - 1, n));
+    const L = LEVELS[level];
+    try { map.setPixelRatio(L.px); } catch { /* older build */ }
+    overlay.setProps({ useDevicePixels: L.deckPx });
+    const hasTerrain = !!map.getTerrain();
+    if (L.terrain !== hasTerrain) { map.setTerrain(L.terrain ? { source: 'dem', exaggeration: 1 } : null); S.elevCache.clear(); }
+    S.quality = level;
+  }
+  if (!QA) setInterval(() => {
+    if (document.hidden || S.paused || !S.lastFrame || performance.now() - S.lastFrame > 1000) return;
+    const cap = mobile ? 40 : 60;
+    if (S.fps < cap * 0.45) { fast = 0; if (++slow >= 2 && level < LEVELS.length - 1) { setLevel(level + 1); slow = 0; } }
+    else if (S.fps > cap * 0.85) { slow = 0; if (++fast >= 4 && level > 0) { setLevel(level - 1); fast = 0; } }
+    else { slow = 0; fast = 0; }
+  }, 4000);
+
   const ready = new Promise((resolve) => { if (styleReady()) resolve(); else map.once('style.load', resolve); });
   ready.then(() => { applyLook(true); requestAnimationFrame(frame); });
   setInterval(() => applyLook(), 60_000);
@@ -256,7 +279,7 @@ export function createScene(container, { year = 2025, onPick, onHover, onUserMov
     setRadar,
     setYear(y) { const s = map.getSource('aerial'); if (s && s.setTiles) s.setTiles([AERIAL(y)]); },
     setBuildings(on) { map.setLayoutProperty('buildings', 'visibility', on ? 'visible' : 'none'); },
-    ground, look: () => S.look, sun: () => S.sun, fps: () => Math.round(S.fps),
+    ground, look: () => S.look, sun: () => S.sun, fps: () => Math.round(S.fps), quality: () => S.quality,
     pause(p) { S.paused = !!p; },
     /** Screen position of a 3D point (for HUD brackets and labels). */
     project(lon, lat, alt = 0) {

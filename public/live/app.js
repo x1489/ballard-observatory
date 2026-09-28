@@ -216,7 +216,8 @@ function listHTML(kind) {
   const B = (bg, fg, inner) => `<div class="b" style="background:${bg};color:${fg}">${inner}</div>`;
   if (kind === 'flights' || kind === 'overview') {
     const rows = air.list().filter((a) => a.rec).sort((a, b) => (a.rec.distKm ?? 99) - (b.rec.distKm ?? 99));
-    return `<div class="list-h"><h2>In the air</h2><p>${rows.length} aircraft within 20 nm of Ballard, from ADS-B · nearest first</p></div><div class="rows">${rows.map((a) => {
+    const note = airStale() ? '<div class="fine" style="margin:0 18px 8px;color:var(--warn)">Live aircraft positions are paused: the ADS-B feed hasn\'t updated in a few minutes. Everything else is live.</div>' : '';
+    return `<div class="list-h"><h2>In the air</h2><p>${rows.length} aircraft within 20 nm of Ballard, from ADS-B · nearest first</p></div>${note}<div class="rows">${rows.map((a) => {
       const r = a.rec, info = app.flightInfo(a.hex), rt = info && info.route;
       return `<button class="row" data-open="aircraft:${a.hex}">${B('rgba(90,200,250,.14)', 'var(--air)', icon(r.kind === 'helicopter' ? 'plane' : 'plane'))}<div><div class="t">${esc(r.callsign || r.reg || a.hex.toUpperCase())}${rt && rt.origin ? ` <span style="color:var(--muted);font-weight:500">${esc(rt.origin.iata || '')} → ${esc(rt.destination.iata || '')}</span>` : ''}</div>
         <div class="s">${esc(a.spec ? a.spec.desc : r.type || 'Aircraft')}${r.operator ? ` · ${esc(r.operator)}` : ''}</div></div><div class="r">${r.onGround ? 'GND' : `${num(Math.round((r.altFt || 0) / 100) * 100)}`}<small>${r.onGround ? '' : 'ft · '}${num((r.distKm || 0) * 0.621, 1)} mi</small></div></button>`;
@@ -262,6 +263,14 @@ function onPick(info) {
   else if (o.kind === 'incident') open('incident', o.id);
 }
 
+// Aircraft positions older than 3 minutes: the feed (or the relay behind it) is down. Say so rather than show nothing.
+function airStale() {
+  const m = store.meta.aircraft;
+  const d = store.get('aircraft');
+  const t = (d && d.t) || (m && m.fetchedAt) || 0;
+  return !!m && Date.now() - t > 3 * 60e3;
+}
+
 // ------------------------------------------------------------------ dock (live tracker chips)
 function chips() {
   const L = store.data;
@@ -274,7 +283,9 @@ function chips() {
   const chip = (id, ic, color, k, v, cls = '') => `<button class="chip glass ${cls}" data-chip="${id}"><span class="ico" style="background:color-mix(in srgb, ${color} 18%, transparent);color:${color}">${icon(ic)}</span><span><div class="k">${esc(k)}</div><div class="v">${v}</div></span></button>`;
   const up = [br, fr].filter((b) => b && b.up);
   $('#dock').innerHTML = [
-    chip('flights', 'plane', 'var(--air)', 'In the air', `${c.air}${nearest ? ` <small>nearest ${esc(nearest.rec.callsign || nearest.rec.reg || '')}</small>` : ''}`),
+    airStale()
+      ? chip('flights', 'plane', 'var(--faint)', 'In the air', '<small>live aircraft paused</small>')
+      : chip('flights', 'plane', 'var(--air)', 'In the air', `${c.air}${nearest ? ` <small>nearest ${esc(nearest.rec.callsign || nearest.rec.reg || '')}</small>` : ''}`),
     chip('buses', 'bus', 'var(--bus)', 'Buses', `${c.bus} <small>on the road</small>`),
     chip('bridge', 'bridge', 'var(--bridge)', 'Drawbridges', up.length ? `${up.map((b) => `${b.name} up ${dur((Date.now() - (b.since || Date.now())) / 1000)}`).join(' · ')}` : `Down <small>open to traffic</small>`, up.length ? 'alert' : ''),
     chip('trains', 'train', 'var(--train)', 'Trains', trains.length ? `${trains.length} <small>on the line</small>` : upcoming[0] ? `${esc(time(upcoming[0].pass.t))} <small>${esc(upcoming[0].route.replace('Amtrak ', ''))}</small>` : '<small>none soon</small>'),
@@ -455,6 +466,10 @@ function onData(ids) {
   scene.add('buses', (ctx) => app.layers.bus.produce(ctx));
   scene.add('aircraft', (ctx) => air.produce(ctx));
   store.subscribe(onData);
+  // Phones drop WebGL contexts when the app is backgrounded for a while; come back to a fresh page, not a black one.
+  const canvas = scene.map.getCanvas();
+  canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); }, false);
+  canvas.addEventListener('webglcontextrestored', () => { location.reload(); }, false);
   island = createIsland(app, $('#island'));
   await Promise.race([scene.ready, new Promise((r) => setTimeout(r, 6000))]);
   await store.start();
