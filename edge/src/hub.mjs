@@ -219,6 +219,9 @@ export class Hub extends DurableObject {
     }
     if (p === 'live') {
       const ids = (url.searchParams.get('ids') || '').split(',').filter((id) => this.byId.has(id)).slice(0, 20);
+      // Right after a restart, ephemeral feeds (not persisted) are empty: fetch them now, briefly, rather than serve nothing.
+      const empty = ids.map((id) => this.byId.get(id)).filter((src) => !this.entry(src.id).fetchedAt && !this.relayed(src));
+      if (empty.length) { try { await withTimeout(Promise.allSettled(empty.map((src) => this.refresh(src))), 6000, 'live'); } catch { /* serve what we have */ } }
       const out = {};
       for (const id of ids) out[id] = this.envelope(this.byId.get(id));
       return json({ now, envelopes: out });

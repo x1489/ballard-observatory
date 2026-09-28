@@ -248,6 +248,7 @@ export async function createServer(opts = {}) {
     }
     if (p.startsWith('/api/')) return sourceEnvelope(req, res, p.slice(5));
     if (p === '/img') return proxyImage(req, res, url.searchParams.get('u'));
+    if (p === '/pro' || p === '/classic') return serveStatic(req, res, `${p}.html`); // same as the edge's html handling
     return serveStatic(req, res, p);
   }
 

@@ -21,8 +21,14 @@ try {
     check(r.status === 200, `${p} ${r.status}`);
     await r.arrayBuffer().catch(() => {});
   }
-  const live = await get('/api/live?ids=bridges,weather,buses,fire911', 'json');
-  const env = (live.body && live.body.envelopes) || {};
+  // Feeds can be empty for a few seconds after a deploy restarts the edge: poll for up to a minute.
+  let live, env = {};
+  for (let i = 0; i < 7; i++) {
+    live = await get('/api/live?ids=bridges,weather,buses,fire911', 'json');
+    env = (live.body && live.body.envelopes) || {};
+    if (['bridges', 'weather', 'buses'].every((id) => env[id] && env[id].data != null)) break;
+    await new Promise((r) => setTimeout(r, 10000));
+  }
   check(live.status === 200 && !!env.bridges && !!env.weather, '/api/live answers');
   for (const id of ['bridges', 'weather', 'buses']) check(env[id] && env[id].data != null, `live feed ${id} has data`);
   const ins = await get('/api/obs/insights.json', 'json');
