@@ -95,7 +95,7 @@ export function createDirector(app) {
   const interrupt = (e) => { if (on && !(e.target.closest && e.target.closest('.keep'))) stop(); };
   for (const ev of ['pointerdown', 'wheel', 'keydown']) addEventListener(ev, interrupt, { capture: true, passive: true });
   return {
-    start() { if (on) return; on = true; shotIdx = 0; document.body.classList.add('director'); app.closeSheet(); app.onDirector(true); next(); },
+    start() { if (on) return; if (app.rewind && app.rewind.on) app.rewind.close(); on = true; shotIdx = 0; document.body.classList.add('director'); app.closeSheet(); app.onDirector(true); next(); },
     stop, get on() { return on; },
   };
 }
