@@ -339,8 +339,8 @@ def plain_for(i):
         n = noun(key)
         rel = m.get("relative") or 0
         since = _month((ev.get("period") or [""])[0] or "")
-        verb = ("doubled" if rel >= 0.95 else f"up {abs(rel) * 100:.0f}%") if rel > 0 else f"down {abs(rel) * 100:.0f}%"
-        out.update(headline=f"{_cap(n)} {verb} since {since}", summary=f"From about {_fmt(m.get('before'))} to {_fmt(m.get('after'))} a month.",
+        moved = ("doubled" if rel >= 0.95 else f"up {abs(rel) * 100:.0f}%") if rel > 0 else f"down {abs(rel) * 100:.0f}%"
+        out.update(headline=f"{_cap(n)} {moved} since {since}", summary=f"From about {_fmt(m.get('before'))} to {_fmt(m.get('after'))} a month.",
                    sure="A lasting shift, not a blip: tested against five years of month-to-month variation." + (" It may partly reflect a change in how these calls are handled." if i.get("caveat") else ""),
                    relevance=60 + i["score"])
     elif t == "near_repeat":
