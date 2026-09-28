@@ -22,6 +22,7 @@ import { createDirector } from './ui/director.js';
 import { createSkyView } from './ui/skyview.js';
 import { createBriefing } from './ui/briefing.js';
 import { createSearch } from './ui/search.js';
+import { createAlerts } from './ui/alerts.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const q = new URLSearchParams(location.search);
@@ -41,6 +42,7 @@ document.body.insertAdjacentHTML('beforeend', `
       <button data-rail="vision" aria-label="Vision modes">${icon('eye')}<span class="tip">Vision &amp; HUD (V)</span></button>
       <button data-rail="sky" aria-label="Sky view">${icon('sky')}<span class="tip">The sky overhead (S)</span></button>
       <button data-rail="briefing" aria-label="Briefing">${icon('news')}<span class="tip">Briefing: what's unusual (B)</span></button>
+      <button data-rail="alerts" aria-label="Alerts">${icon('bell')}<span class="tip">Alerts on your phone</span></button>
     </div>
     <div class="grp glass"><button data-rail="north" class="compass" aria-label="Reset view">${icon('compass')}<span class="tip">Reset view</span></button></div>
   </div>
@@ -103,6 +105,7 @@ const vision = createVision(app);
 const director = createDirector(app);
 const skyview = createSkyView(app);
 const search = createSearch(app);
+const alerts = createAlerts(app);
 let island = null, radarOn = false;
 
 // ------------------------------------------------------------------ sheet + cards
@@ -207,6 +210,7 @@ function openList(kind) {
   clearInterval(cardTimer); card = null;
   select(null);
   if (kind === 'briefing') { openSheet('briefing'); sheetBody.innerHTML = '<div></div>'; app.briefing.home(sheetBody.firstChild); history.replaceState(null, '', '#/briefing'); return; }
+  if (kind === 'alerts') { openSheet('alerts'); sheetBody.innerHTML = '<div></div>'; alerts.render(sheetBody.firstChild); history.replaceState(null, '', '#/alerts'); return; }
   openSheet(`list:${kind}`);
   const render = () => { sheetBody.innerHTML = listHTML(kind); };
   render();
@@ -363,6 +367,7 @@ document.querySelector('.rail').addEventListener('click', (e) => {
   else if (r === 'vision') popover('#pop-vision', visionHTML);
   else if (r === 'sky') { if (skyview.open) skyview.hide(); else { closeSheet(); skyview.show(); } b.classList.toggle('on', skyview.open); }
   else if (r === 'briefing') openList('briefing');
+  else if (r === 'alerts') openList('alerts');
   else if (r === 'director') { if (director.on) director.stop(); else director.start(); }
   else if (r === 'north') { scene.follow(null); scene.map.easeTo({ center: [-122.3905, 47.6665], zoom: 15.3, pitch: 62, bearing: 28, duration: 1600 }); }
 });
@@ -479,12 +484,15 @@ function onData(ids) {
   await store.start();
   sky.load().then(chips).catch(() => {});
   $('#boot').classList.add('done');
-  // deep links
-  const [, kind, id] = (location.hash.match(/^#\/([^/]+)\/?(.*)$/) || []);
-  if (kind === 'list') openList(decodeURIComponent(id));
-  else if (kind === 'briefing') openList('briefing');
-  else if (kind === 'sky') skyview.show();
-  else if (kind) setTimeout(() => open(kind, decodeURIComponent(id)), 400);
+  // deep links (also used when a notification is tapped while the app is open)
+  app.route = () => {
+    const [, kind, id] = (location.hash.match(/^#\/([^/]+)\/?(.*)$/) || []);
+    if (kind === 'list') openList(decodeURIComponent(id));
+    else if (kind === 'briefing' || kind === 'alerts') openList(kind);
+    else if (kind === 'sky') skyview.show();
+    else if (kind) setTimeout(() => open(kind, decodeURIComponent(id)), 400);
+  };
+  app.route();
   if (q.get('director') === '1') director.start();
   if (q.get('vision')) vision.set(q.get('vision'));
   setInterval(chips, 2000);

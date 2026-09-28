@@ -33,6 +33,9 @@ deleted_classes = ["Fetcher"]
 crons = ["*/10 * * * *"]
 
 [vars]
+# Web Push: the public half of the VAPID key pair (the private half is the VAPID_PRIVATE_JWK secret)
+VAPID_PUBLIC = "BItktudUST11bQ-TUuvzq9JrXZJu2Gqx3ncnTps2ZltX_E0wSebP0N9z3OfZ_XdKeot5SkUwh9J3juw51yWLwuU"
+SITE_URL = "https://ballard-observatory.ballard-observatory-edge.workers.dev"
 OBS_BASE = "https://huggingface.co/datasets/x1489/ballard-observatory/resolve/main/_out"
 
 [observability]

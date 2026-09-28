@@ -34,6 +34,11 @@ export default {
       if (Number(request.headers.get('Content-Length') || 0) > 2_000_000) return new Response('too large', { status: 413 });
       return env.HUB.get(env.HUB.idFromName('ballard')).fetch(request);
     }
+    if (p === '/api/push/subscribe' || p === '/api/push/status' || p === '/api/push/test') {
+      if (request.method !== 'POST') return new Response('method not allowed', { status: 405, headers: { Allow: 'POST' } });
+      if (Number(request.headers.get('Content-Length') || 0) > 8192) return new Response('too large', { status: 413 });
+      return env.HUB.get(env.HUB.idFromName('ballard')).fetch(request);
+    }
     if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('method not allowed', { status: 405, headers: { Allow: 'GET, HEAD' } });
 
     if (p.startsWith('/api/obs/')) {
@@ -58,7 +63,7 @@ export default {
     if (p === '/api/stream') return new Response('Live push is not offered on the edge deployment; poll /api/<feed>.', { status: 503, headers: { 'Cache-Control': 'no-store' } });
     if (p.startsWith('/api/')) {
       const stub = env.HUB.get(env.HUB.idFromName('ballard'));
-      if (p === '/api/sources' || p === '/api/activity' || p.startsWith('/api/history')) return stub.fetch(request);
+      if (p === '/api/sources' || p === '/api/activity' || p.startsWith('/api/history') || p.startsWith('/api/push/')) return stub.fetch(request);
       if (p === '/api/flight') return cached(request, ctx, 1800, () => stub.fetch(request));
       return cached(request, ctx, 8, () => stub.fetch(request));
     }

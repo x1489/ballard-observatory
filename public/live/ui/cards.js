@@ -241,7 +241,7 @@ export function bridgeCard(app, name) {
       <div class="sec"><h3>Openings today <span data-k="cnt"></span></h3><div class="bars" data-k="bars"></div><div class="route-meta" style="margin-top:4px"><span>12 am</span><span>6 am</span><span>noon</span><span>6 pm</span><span>11 pm</span></div></div>
       <div class="sec"><h3>Recent openings</h3><div data-k="log"></div></div>
       ${cam ? `<div class="sec"><h3>Live camera <span>${esc(cam.label)}</span></h3><div class="cam"><img alt="SDOT traffic camera near the ${esc(name)} Bridge" src="/img?u=${encodeURIComponent(cam.url)}&t=${cam.lastModified}"><span>SDOT · ${esc(ago(cam.lastModified))}</span></div></div>` : ''}
-      <div class="actions">${followBtn(app.follows.has('bridge', name))}<button class="btn" data-act="track">${icon('target')} Show</button></div>
+      <div class="actions">${followBtn(app.follows.has('bridge', name))}<button class="btn" data-act="track">${icon('target')} Show</button><button class="btn" data-open="list:alerts">${icon('bell')} Phone alerts</button></div>
       <div class="fine">Status from SDOT's live bridge feed; openings history from Seattle open data. Under federal rules (33 CFR 117.1051) these bridges needn't open for most vessels during weekday rush hours.</div></div>`;
     tick();
   }

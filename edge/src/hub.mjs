@@ -11,6 +11,7 @@ import { createActivity, runDetector } from './gen/core/activity.mjs';
 import { createHistory } from './gen/core/history.mjs';
 import { __state, __stateDirty } from './gen/lib.mjs';
 import { lookupFlight } from './gen/sources/lookup.mjs';
+import { Push, TOPICS } from './push.mjs';
 
 const MAX_PER_ALARM = 6;
 const ACTIVE_MS = 10 * 60e3;
@@ -27,6 +28,7 @@ export class Hub extends DurableObject {
     this.ctx = ctx;
     this.inflight = new Map();
     this.pushedAt = new Map(); // source id -> last relay push
+    this.push = new Push(ctx.storage, env);
     this.dirty = new Set();
     this.lastHistoryPersist = 0;
     this.histPersisted = new Map(); // key -> last t persisted
@@ -77,6 +79,7 @@ export class Hub extends DurableObject {
     const ne = { data, fetchedAt, error: null, errorAt: null, ms, ok: (e.ok || 0) + 1, fail: e.fail || 0 };
     this.entries.set(src.id, ne);
     this.dirty.add(src.id);
+    try { await this.push.observe(src.id, restored ? null : prev, data); } catch (err) { console.warn('[push] observe', err && err.message); }
     if (typeof src.metrics === 'function') {
       try { this.history.appendMany(src.metrics(data), ne.fetchedAt); } catch (err) { console.warn(`[metrics] ${src.id}: ${err && err.message}`); }
     }
@@ -153,11 +156,12 @@ export class Hub extends DurableObject {
     due.sort((a, b) => (b[1].background ? 1 : 0) - (a[1].background ? 1 : 0) || a[0] - b[0]);
     const batch = due.slice(0, MAX_PER_ALARM).map(([, s]) => s);
     await Promise.allSettled(batch.map((s) => this.refresh(s)));
+    if (this.push.pending()) { try { await this.push.drain(); } catch (err) { console.warn('[push] drain', err && err.message); } }
     try { await this.persist(); } catch (err) { console.error('[persist]', err && err.message); }
     const t = Date.now();
     let next = t + 5 * 60e3;
     for (const s of this.sources) if (!this.relayed(s, t)) next = Math.min(next, dueAt(s, this.entry(s.id), { active: this.active(t), now: t }));
-    const floor = due.length > batch.length ? 250 : 1500;
+    const floor = due.length > batch.length || this.push.pending() ? 250 : 1500;
     await this.ctx.storage.setAlarm(Math.max(t + floor, next));
   }
 
@@ -187,6 +191,18 @@ export class Hub extends DurableObject {
       }
       this.ctx.waitUntil(this.persist().catch(() => {}));
       return json({ ok: true, took, active: now - this.lastRequest < ACTIVE_MS && this.lastRequest > 0 });
+    }
+    if (p === 'push/key') {
+      const v = this.push.vapid();
+      return v ? json({ publicKey: v.publicKey, topics: TOPICS }) : json({ error: 'alerts not configured' }, 404);
+    }
+    if ((p === 'push/subscribe' || p === 'push/status' || p === 'push/test') && request.method === 'POST') {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'bad json' }, 400); }
+      if (p === 'push/status') return json(await this.push.status(body && body.endpoint));
+      if (p === 'push/test') { const r = await this.push.test(body && body.endpoint); return json(r, r.status || 200); }
+      const r = await this.push.subscribe(body);
+      return json(r, r.status || 200);
     }
     if (p === 'sources') return json({ now, loadErrors: this.loadErrors, sources: this.sources.map((s) => this.row(s, now)), clients: 0, active: this.active(now), edge: true, startedAt: this.startedAt });
     if (p === 'activity') {
