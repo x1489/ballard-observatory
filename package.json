@@ -4,10 +4,12 @@
   "private": true,
   "description": "Local real-time dashboard for Ballard, Seattle",
   "type": "module",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node server.mjs",
-    "test": "node --test tests/",
+    "test": "node --test $(find tests -name '*.test.mjs' | sort)",
     "probe": "node tools/probe.mjs"
   }
 }
