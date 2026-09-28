@@ -9,6 +9,7 @@ import { ROOT, DATA_DIR, get, discard } from './lib.mjs';
 import { loadSources } from './sources/index.mjs';
 import { lookupFlight, memoryCache } from './sources/lookup.mjs';
 import { createRelay } from './core/relay.mjs';
+import { createRecorder } from './core/recorder.mjs';
 import { createScheduler, idleTtlOf } from './core/scheduler.mjs';
 import { createHub } from './core/hub.mjs';
 import { createHistory } from './core/history.mjs';
@@ -64,6 +65,8 @@ export async function createServer(opts = {}) {
   const scheduler = createScheduler({ sources, isActive, onRefresh: afterRefresh, log, ...opts.scheduler });
   const flightCache = memoryCache();
   const relay = createRelay({ scheduler, dataDir, log });
+  // Rewind: history of moving things, published with the analytics (only for the real server, not tests).
+  const recorder = opts.record ? createRecorder({ scheduler, outDir: path.join(ROOT, 'lake', '_out'), log }) : { stop() {} };
   // Camera time-lapse frames (see core/camstore.mjs) and "usual for this hour" baselines (core/baseline.mjs).
   const camstore = createCamStore({ dir: path.join(dataDir, 'cams'), keep: opts.camKeep ?? 90, fetchImage: fetchCamImage, log });
   camstore.load();
@@ -225,7 +228,7 @@ export async function createServer(opts = {}) {
     // Platform outputs written by the analytics engines (platform/, `python -m bo engines`).
     if (p.startsWith('/api/obs/')) {
       const name = p.slice('/api/obs/'.length);
-      if (!OBS_FILES.has(name) && !/^places\/[0-9a-f]{2}\.json$/.test(name)) return sendText(req, res, 404, 'not found');
+      if (!OBS_FILES.has(name) && !/^places\/[0-9a-f]{2}\.json$/.test(name) && !/^replay\/(index\.json|\d{4}-\d{2}-\d{2}\/\d{2}\.json)$/.test(name)) return sendText(req, res, 404, 'not found');
       return serveStatic(req, res, `/${name}`, obsDir);
     }
     if (p === '/api/cams') {
@@ -271,6 +274,7 @@ export async function createServer(opts = {}) {
 
   async function close() {
     relay.stop();
+    recorder.stop();
     if (closed) return;
     scheduler.stop();
     history.stop();
@@ -361,7 +365,7 @@ async function main() {
 
   let app;
   try {
-    app = await createServer({ port: +process.env.PORT || 4177, host: process.env.HOST || '127.0.0.1' });
+    app = await createServer({ port: +process.env.PORT || 4177, host: process.env.HOST || '127.0.0.1', record: true });
   } catch (err) {
     console.error(`Ballard Live failed to start: ${err && err.message || err}`);
     process.exit(1);

@@ -24,6 +24,7 @@ import { createSkyView } from './ui/skyview.js';
 import { createBriefing } from './ui/briefing.js';
 import { createSearch } from './ui/search.js';
 import { createAlerts } from './ui/alerts.js';
+import { createRewind } from './ui/rewind.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const q = new URLSearchParams(location.search);
@@ -44,6 +45,7 @@ document.body.insertAdjacentHTML('beforeend', `
       <button data-rail="sky" aria-label="Sky view">${icon('sky')}<span class="tip">The sky overhead (S)</span></button>
       <button data-rail="briefing" aria-label="Briefing">${icon('news')}<span class="tip">Briefing: what's unusual (B)</span></button>
       <button data-rail="alerts" aria-label="Alerts">${icon('bell')}<span class="tip">Alerts on your phone</span></button>
+      <button data-rail="rewind" aria-label="Rewind">${icon('rewind')}<span class="tip">Rewind the last day (R)</span></button>
     </div>
     <div class="grp glass"><button data-rail="north" class="compass" aria-label="Reset view">${icon('compass')}<span class="tip">Reset view</span></button></div>
   </div>
@@ -107,6 +109,7 @@ const director = createDirector(app);
 const skyview = createSkyView(app);
 const search = createSearch(app);
 const alerts = createAlerts(app);
+let rewind = null; // created after the layers exist (boot)
 let island = null, radarOn = false;
 
 // ------------------------------------------------------------------ sheet + cards
@@ -205,6 +208,7 @@ sheetBody.addEventListener('click', (e) => {
     else if (act === 'cockpit') scene.follow(card.target, 'cockpit');
     else if (act === 'radar') { setRadar(!radarOn); a.classList.toggle('on', radarOn); }
     else if (act === 'sky') skyview.show();
+    else if (act === 'share') shareCurrent(card);
     else if (act === 'watch-stop' && card.kind === 'stop') {
       const st = app.transit.stop(card.id);
       const w = { stop: card.id, name: st ? st.name : card.id, route: a.dataset.route || null, label: a.dataset.label || '' };
@@ -289,6 +293,12 @@ function onPick(info) {
   if (director.on) return;
   const o = info && info.object;
   if (!o) return;
+  if (rewind && rewind.on) { // cards are live; in Rewind just say what it was
+    if (o.kind === 'aircraft') toast(`${o.o.rec.callsign || o.o.rec.reg || o.id.toUpperCase()} · ${o.o.spec.desc} · ${num(Math.round((o.o.rec.altFt || 0) / 100) * 100)} ft`);
+    else if (o.kind === 'bus') toast(`${o.o.route ? o.o.route.short : 'Bus'} ${o.o.info && o.o.info.headsign ? `to ${o.o.info.headsign}` : ''} · bus ${o.id}`);
+    else if (o.kind === 'incident') toast(`${o.label} · ${time(o.t)}`);
+    return;
+  }
   if (o.kind === 'aircraft' && o.id) open('aircraft', o.id);
   else if (o.kind === 'bus' && o.id) open('bus', o.id);
   else if (o.kind === 'train' && o.id) open('train', o.id);
@@ -338,7 +348,11 @@ $('#dock').addEventListener('click', (e) => {
 });
 
 // ------------------------------------------------------------------ top-left: clock + weather
-function clock() { $('#clock').textContent = new Date().toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: 'numeric', minute: '2-digit', second: '2-digit' }).toLowerCase(); }
+function clock() {
+  const t = rewind && rewind.on ? rewind.time : Date.now();
+  $('#clock').textContent = new Date(t).toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: 'numeric', minute: '2-digit', second: '2-digit' }).toLowerCase();
+  $('#live').lastChild.textContent = rewind && rewind.on ? 'REWIND' : 'LIVE';
+}
 setInterval(clock, 1000); clock();
 function weatherChip() {
   const w = store.get('weather');
@@ -397,6 +411,7 @@ document.querySelector('.rail').addEventListener('click', (e) => {
   else if (r === 'sky') { if (skyview.open) skyview.hide(); else { closeSheet(); skyview.show(); } b.classList.toggle('on', skyview.open); }
   else if (r === 'briefing') openList('briefing');
   else if (r === 'alerts') openList('alerts');
+  else if (r === 'rewind' && rewind) { rewind.toggle(); setTimeout(() => b.classList.toggle('on', rewind.on), 300); }
   else if (r === 'director') { if (director.on) director.stop(); else director.start(); }
   else if (r === 'north') { scene.follow(null); scene.map.easeTo({ center: [-122.3905, 47.6665], zoom: 15.3, pitch: 62, bearing: 28, duration: 1600 }); }
 });
@@ -411,14 +426,29 @@ addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); search.open(); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
+  if (k === 'escape' && rewind && rewind.on) { rewind.close(); return; }
   if (k === 'escape') { if (skyview.open) { skyview.hide(); $('[data-rail="sky"]').classList.remove('on'); } else closeSheet(); document.querySelectorAll('.pop.open').forEach((x) => x.classList.remove('open')); }
   else if (k === 'd') { if (director.on) director.stop(); else director.start(); }
   else if (k === 's') { if (skyview.open) skyview.hide(); else skyview.show(); $('[data-rail="sky"]').classList.toggle('on', skyview.open); }
   else if (k === 'b') openList('briefing');
+  else if (k === 'r' && rewind) rewind.toggle();
   else if (k === 'l') popover('#pop-layers', layersHTML);
   else if (k === 'v') { const i = MODES.findIndex((m) => m.id === vision.mode); vision.set(MODES[(i + 1) % MODES.length].id); toast(`Vision: ${MODES[(i + 1) % MODES.length].label}`); }
   else if (k === '/') { e.preventDefault(); search.open(); }
 });
+
+// ------------------------------------------------------------------ share: a link that opens this card and this view
+async function shareCurrent(c) {
+  const m = scene.map, ctr = m.getCenter();
+  const cam = [ctr.lng.toFixed(5), ctr.lat.toFixed(5), m.getZoom().toFixed(2), m.getPitch().toFixed(0), m.getBearing().toFixed(0)].join(',');
+  const url = `${location.origin}/?cam=${cam}#/${c.kind}/${encodeURIComponent(c.id)}`;
+  const title = `${c.label()} · Ballard Live`;
+  try {
+    if (navigator.share) { await navigator.share({ title, url }); return; }
+    await navigator.clipboard.writeText(url);
+    toast('Link copied');
+  } catch (e) { if (e && e.name !== 'AbortError') toast('Couldn\'t share this one'); }
+}
 
 // ------------------------------------------------------------------ toasts
 let toastT = 0;
@@ -505,6 +535,8 @@ function onData(ids) {
   scene.add('buses', (ctx) => app.layers.bus.produce(ctx));
   scene.add('aircraft', (ctx) => air.produce(ctx));
   store.subscribe(onData);
+  rewind = createRewind(app, { toast });
+  app.rewind = rewind;
   // Phones drop WebGL contexts when the app is backgrounded for a while; come back to a fresh page, not a black one.
   const canvas = scene.map.getCanvas();
   canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); }, false);

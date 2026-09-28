@@ -12,7 +12,19 @@ const LANE = 1.9; // metres right of the route line (Metro shapes follow street 
 
 export function createBuses(transit, { deckZ = () => null } = {}) {
   const buses = new Map(); // id -> { track, rec, info, spec, lastSeen }
-  const S = { selected: null, visible: true, labels: true };
+  const S = { selected: null, visible: true, labels: true, replay: null };
+  const replayInfo = new Map(); // id -> { trip, info, spec }
+  function replayEntries() {
+    return S.replay.map((v) => {
+      let c = replayInfo.get(v.id);
+      if (!c || c.trip !== v.trip) {
+        const info = transit.tripInfo(v.trip, v.route, null);
+        c = { trip: v.trip, info, spec: busSpec(v.id, info && info.route ? info.route.short : v.route) };
+        replayInfo.set(v.id, c);
+      }
+      return [v.id, { track: null, rec: { ...v, next: [] }, info: c.info, route: c.info && c.info.route, spec: c.spec, lastSeen: Date.now() }];
+    });
+  }
 
   function ingest(data) {
     const now = Date.now();
@@ -50,7 +62,7 @@ export function createBuses(transit, { deckZ = () => null } = {}) {
     const byModel = new Map(), lights = [], glows = [], labels = [];
     const t = ctx.now, night = ctx.glow;
     const add = (url, it) => { if (!byModel.has(url)) byModel.set(url, []); byModel.get(url).push(it); };
-    for (const [id, o] of buses) {
+    for (const [id, o] of (S.replay ? replayEntries() : buses)) {
       let p;
       if (o.track && o.track.fix) p = o.track.at(t, LANE);
       else p = { lon: o.rec.lon, lat: o.rec.lat, heading: o.rec.bearing ?? 0, moving: false };
@@ -113,6 +125,7 @@ export function createBuses(transit, { deckZ = () => null } = {}) {
     ingest, produce,
     set(opts) { Object.assign(S, opts); },
     select(id) { S.selected = id || null; },
+    setReplay(list) { S.replay = list || null; },
     get selected() { return S.selected; },
     has: (id) => buses.has(id),
     get: (id) => buses.get(id) || null,

@@ -14,7 +14,19 @@ export function createTrains(railJson) {
   const pts = decodePolyline(railJson.line);
   const north = measure(pts), south = measure([...pts].reverse());
   const trains = new Map();
-  const S = { selected: null, visible: true };
+  const S = { selected: null, visible: true, replay: null, replayTracks: new Map(), replayT: 0 };
+  function replayEntries(now) {
+    if (now < S.replayT) S.replayTracks.clear(); // scrubbed backwards: start the tracks afresh
+    S.replayT = now;
+    return S.replay.map((tr) => {
+      const nb = tr.heading ? tr.heading === 'N' : true;
+      let o = S.replayTracks.get(tr.id);
+      if (!o || o.nb !== nb) { o = { nb, track: new PathTrack(tr.id, nb ? north : south, { defaultSpeed: 15, maxSpeed: 36, lookaheadS: 20 }), rec: tr, consist: trainConsist(tr.route) }; S.replayTracks.set(tr.id, o); }
+      o.rec = tr;
+      o.track.update({ t: now, lon: tr.lon, lat: tr.lat, speed: isNum(tr.speedMph) ? tr.speedMph * MPH : null }, now);
+      return [tr.id, o];
+    });
+  }
 
   function ingest(data) {
     const now = Date.now();
@@ -37,7 +49,7 @@ export function createTrains(railJson) {
     if (!S.visible) return [];
     const byModel = new Map(), lights = [], glows = [];
     const t = ctx.now, night = ctx.glow;
-    for (const [id, o] of trains) {
+    for (const [id, o] of (S.replay ? replayEntries(t) : trains)) {
       if (o.track.offRoute || !o.track.fix || o.track.fix.d > 400) continue; // not on the Ballard stretch
       const head = o.track.at(t, 0);
       const c = o.consist;
@@ -82,6 +94,7 @@ export function createTrains(railJson) {
     ingest, produce,
     set(opts) { Object.assign(S, opts); },
     select(id) { S.selected = id || null; },
+    setReplay(list) { S.replay = list || null; if (!list) S.replayTracks.clear(); },
     get: (id) => trains.get(id) || null,
     now(id) { const f = frame.find((x) => x.id === id); return f ? { lon: f.head.lon, lat: f.head.lat, alt: 0, heading: f.head.heading } : null; },
     list: () => [...trains.entries()].map(([id, o]) => ({ id, ...o })),

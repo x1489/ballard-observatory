@@ -13,7 +13,19 @@ const T0 = Date.now() / 1000; // trail timestamps are relative to page load (flo
 
 export function createAircraft() {
   const tracks = new Map(); // hex -> { track, rec, spec, lastSeen }
-  const S = { selected: null, hover: null, qnh: null, visible: true, labels: true, trails: true, thermal: false };
+  const S = { selected: null, hover: null, qnh: null, visible: true, labels: true, trails: true, thermal: false, replay: null };
+  const replayCache = new Map(); // hex -> { spec, specKey }
+  /** Rewind: pseudo-tracks at fixed recorded states (no dead reckoning, no trails). */
+  function replayEntries() {
+    return S.replay.map((a) => {
+      let c = replayCache.get(a.hex);
+      const k = `${a.type}|${a.kind}|${a.category}`;
+      if (!c || c.specKey !== k) { c = { spec: aircraftSpec(a), specKey: k }; replayCache.set(a.hex, c); }
+      const st = { lon: a.lon, lat: a.lat, alt: a.onGround ? 0 : a.altFt * FT, heading: a.track || 0, pitch: Math.max(-10, Math.min(15, Math.atan2((a.vrFpm || 0) * FPM, Math.max((a.gsKt || 0) * KT, 30)) * 57.3)),
+        bank: 0, gs: (a.gsKt || 0) * KT, vr: (a.vrFpm || 0) * FPM, turn: 0, age: 0 };
+      return [a.hex, { spec: c.spec, rec: a, lastSeen: Date.now(), track: { at: () => ({ ...st }), fix: { onGround: !!a.onGround }, trail: [], record() {} } }];
+    });
+  }
 
   function ingest(data) {
     const now = Date.now();
@@ -55,7 +67,7 @@ export function createAircraft() {
     const sun = ctx.sun, dayShadow = sun.elevation > 6;
     const shadowLen = dayShadow ? 1 / Math.tan(toRad(sun.elevation)) : 0;
     const t = ctx.now, night = ctx.glow; // 0 day .. 1 night
-    for (const [hex, o] of tracks) {
+    for (const [hex, o] of (S.replay ? replayEntries() : tracks)) {
       const { s, z, agl } = state(o, ctx);
       if (s.age > 75) continue;
       o.track.record(t, { lon: s.lon, lat: s.lat, alt: z });
@@ -147,6 +159,7 @@ export function createAircraft() {
     set(opts) { Object.assign(S, opts); },
     get selected() { return S.selected; },
     select(hex) { S.selected = hex || null; },
+    setReplay(list) { S.replay = list || null; },
     has: (hex) => tracks.has(hex),
     record: (hex) => (tracks.get(hex) || {}).rec || null,
     spec: (hex) => (tracks.get(hex) || {}).spec || null,

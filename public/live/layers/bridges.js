@@ -10,9 +10,21 @@ const RATE = 1.15;      // degrees per second (a bascule takes about a minute to
 export function createBridges(geo, ground) {
   const B = geo.bridges.map((b) => ({ ...b, angle: 0, target: 0, up: false, since: null, seen: false }));
   let last = 0;
-  const S = { visible: true, selected: null };
+  const S = { visible: true, selected: null, replayT: null };
 
+  let log = [];
+  /** Rewind: raise/lower the leaves as they were at time t (from the openings log), or back to live (null). */
+  function setReplayTime(t) {
+    S.replayT = t;
+    for (const b of B) {
+      if (t == null) { b.target = b.up ? RAISED : 0; continue; }
+      const open = log.some((l) => l.bridge === b.name && l.upAt <= t && (l.downAt == null || t < l.downAt));
+      b.target = open ? RAISED : 0;
+    }
+  }
   function ingest(data) {
+    if (data && Array.isArray(data.log)) log = data.log;
+    if (S.replayT != null) return; // rewinding: live changes apply when we come back
     for (const lb of (data && data.bridges) || []) {
       const b = B.find((x) => x.id === lb.id || x.name === lb.name);
       if (!b) continue;
@@ -77,7 +89,7 @@ export function createBridges(geo, ground) {
   }
 
   return {
-    ingest, produce, deckZ,
+    ingest, produce, deckZ, setReplayTime,
     set(opts) { Object.assign(S, opts); },
     list: () => B,
     get: (name) => B.find((b) => b.name === name) || null,

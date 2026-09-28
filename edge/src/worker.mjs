@@ -8,7 +8,7 @@
 export { Hub } from './hub.mjs';
 
 const IMG_ALLOW = ['https://www.seattle.gov/trafficcams/images/'];
-const OBS_OK = /^(insights\.json|relations\.json|interactions\.json|hotspots\.geojson|density\.geojson|series\.json|places\.json|place_index\.json|catalog\.json|concordance\.json|run\.json|civic\.json|nearby_quantiles\.json|places\/[0-9a-f]{2}\.json)$/;
+const OBS_OK = /^(insights\.json|relations\.json|interactions\.json|hotspots\.geojson|density\.geojson|series\.json|places\.json|place_index\.json|catalog\.json|concordance\.json|run\.json|civic\.json|nearby_quantiles\.json|places\/[0-9a-f]{2}\.json|replay\/index\.json|replay\/\d{4}-\d{2}-\d{2}\/\d{2}\.json)$/;
 
 async function cached(request, ctx, ttl, produce) {
   const cache = caches.default;

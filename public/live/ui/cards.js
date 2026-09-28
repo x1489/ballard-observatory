@@ -77,7 +77,7 @@ export function aircraftCard(app, hex) {
       <div class="sec"><h3>Altitude <span data-k="altnote"></span></h3><div data-k="spark"></div></div>
       <div class="actions">${followBtn(app.follows.has('aircraft', hex))}
         <button class="btn" data-act="track">${icon('target')} Track</button><button class="btn" data-act="chase">${icon('chase')} Chase</button>
-        ${h.rec.onGround ? '' : `<button class="btn" data-act="cockpit">${icon('cockpit')} Cockpit</button>`}</div>
+        ${h.rec.onGround ? '' : `<button class="btn" data-act="cockpit">${icon('cockpit')} Cockpit</button>`}<button class="btn" data-act="share">${icon('link')} Share</button></div>
       <div class="fine">Position from ADS-B (${esc((app.store.get('aircraft') || {}).provider || 'adsb.lol')}, volunteer receivers), drawn between reports by dead reckoning.
         ${h.rt ? 'Route from adsbdb: callsign-based, can be wrong for charters and repositioning flights.' : ''}
         <br><a href="https://globe.adsb.lol/?icao=${esc(hex)}" target="_blank" rel="noopener">Track history</a> · ${h.rec.callsign ? `<a href="https://flightaware.com/live/flight/${esc(h.rec.callsign)}" target="_blank" rel="noopener">FlightAware</a> · ` : ''}ICAO ${esc(hex.toUpperCase())}${h.rec.reg ? ` · ${esc(h.rec.reg)}` : ''}</div></div>`;
@@ -150,7 +150,7 @@ export function busCard(app, id) {
       <div data-k="status"></div>
       <div class="grid2" data-k="grid"></div>
       <div class="sec"><h3>Next stops <span data-k="upd"></span></h3><div class="timeline" data-k="stops" style="--c:${esc(color)}"></div></div>
-      <div class="actions">${followBtn(app.follows.has('bus', id))}<button class="btn" data-act="track">${icon('target')} Track</button><button class="btn" data-act="chase">${icon('chase')} Ride along</button></div>
+      <div class="actions">${followBtn(app.follows.has('bus', id))}<button class="btn" data-act="track">${icon('target')} Track</button><button class="btn" data-act="chase">${icon('chase')} Ride along</button><button class="btn" data-act="share">${icon('link')} Share</button></div>
       <div class="fine">King County Metro real-time feed (GTFS-rt): a position about every 30 seconds and predicted arrival times; between reports the bus is moved along its route at the pace those predictions imply.
         Vehicle ${esc(id)}: ${esc(spec.desc)}${spec.propulsion === 'trolley' ? ' (electric trolleybus)' : spec.propulsion === 'battery' ? ' (battery-electric)' : ''}.</div></div>`;
     tick();
@@ -199,7 +199,7 @@ export function stopCard(app, stopId) {
     root.innerHTML = `<div class="card"><div class="kind" style="color:var(--bus)">${icon('bus')} Bus stop · #${esc(stopId)}</div>
       <h1 style="font-size:24px">${esc(s.name)}</h1><div class="h-sub">Live arrivals from King County Metro's real-time feed</div>
       <div class="sec"><h3>Arriving <span data-k="upd"></span></h3><div class="rows" style="padding:0" data-k="list"></div></div>
-      <div class="actions"><button class="btn" data-act="track">${icon('target')} Show</button><a class="btn" href="https://kingcounty.gov/en/dept/metro" target="_blank" rel="noopener">${icon('link')} Schedules</a></div>
+      <div class="actions"><button class="btn" data-act="track">${icon('target')} Show</button><a class="btn" href="https://kingcounty.gov/en/dept/metro" target="_blank" rel="noopener">${icon('link')} Schedules</a><button class="btn" data-act="share">${icon('link')} Share</button></div>
       <div class="fine">Only buses already on their way (reporting live) are listed; tap the bell to be alerted about 5 minutes before one gets here.</div></div>`;
     tick();
   }
@@ -239,7 +239,7 @@ export function trainCard(app, id) {
       <h1>${esc(t.route)} ${esc(t.num)}</h1><div class="h-sub">${esc(t.origin.name || t.origin.code)} → ${esc(t.dest.name || t.dest.code)}</div>
       <div data-k="status"></div><div class="grid2" data-k="grid"></div>
       <div class="sec"><h3>Stations</h3><div class="timeline" data-k="stations" style="--c:var(--train)"></div></div>
-      <div class="actions">${followBtn(app.follows.has('train', id))}<button class="btn" data-act="track">${icon('target')} Track</button><button class="btn" data-act="chase">${icon('chase')} Chase</button></div>
+      <div class="actions">${followBtn(app.follows.has('train', id))}<button class="btn" data-act="track">${icon('target')} Track</button><button class="btn" data-act="chase">${icon('chase')} Chase</button><button class="btn" data-act="share">${icon('link')} Share</button></div>
       <div class="fine">Amtrak's train map via Amtraker; positions every one to a few minutes, motion along the BNSF line in between is estimated from the reported speed. The time a train passes Ballard is estimated from its Seattle and Edmonds times.</div></div>`;
     tick();
   }
@@ -286,7 +286,7 @@ export function bridgeCard(app, name) {
       <div class="sec"><h3>Openings today <span data-k="cnt"></span></h3><div class="bars" data-k="bars"></div><div class="route-meta" style="margin-top:4px"><span>12 am</span><span>6 am</span><span>noon</span><span>6 pm</span><span>11 pm</span></div></div>
       <div class="sec"><h3>Recent openings</h3><div data-k="log"></div></div>
       ${cam ? `<div class="sec"><h3>Live camera <span>${esc(cam.label)}</span></h3><div class="cam"><img alt="SDOT traffic camera near the ${esc(name)} Bridge" src="/img?u=${encodeURIComponent(cam.url)}&t=${cam.lastModified}"><span>SDOT · ${esc(ago(cam.lastModified))}</span></div></div>` : ''}
-      <div class="actions">${followBtn(app.follows.has('bridge', name))}<button class="btn" data-act="track">${icon('target')} Show</button><button class="btn" data-open="list:alerts">${icon('bell')} Phone alerts</button></div>
+      <div class="actions">${followBtn(app.follows.has('bridge', name))}<button class="btn" data-act="track">${icon('target')} Show</button><button class="btn" data-open="list:alerts">${icon('bell')} Phone alerts</button><button class="btn" data-act="share">${icon('link')} Share</button></div>
       <div class="fine">Status from SDOT's live bridge feed; openings history from Seattle open data. Under federal rules (33 CFR 117.1051) these bridges needn't open for most vessels during weekday rush hours.</div></div>`;
     tick();
   }
@@ -337,7 +337,7 @@ export function incidentCard(app, id) {
       <h1>${esc(x.label)}</h1><div class="h-sub">${esc(titleCase(r.address || r.location || ''))}</div>
       <div data-k="status"></div>
       ${units.length ? `<div class="sec"><h3>Units dispatched <span>${units.length}</span></h3><div class="rows" style="padding:0">${units.map((u) => `<div class="row" style="grid-template-columns:40px 1fr;padding:6px 4px"><div class="b" style="background:${rgb(c)}22;color:${rgb(c)}">${esc(u)}</div><div class="t">${esc(unitName(u))}</div></div>`).join('')}</div></div>` : ''}
-      <div class="actions"><button class="btn" data-act="track">${icon('target')} Show</button></div>
+      <div class="actions"><button class="btn" data-act="track">${icon('target')} Show</button><button class="btn" data-act="share">${icon('link')} Share</button></div>
       <div class="fine">${x.src === 'fire' ? 'Seattle Fire Department real-time 911 dispatches. Medical calls are included without patient details; an address can be a block location.' : 'SDOT traffic incident feed.'}</div></div>`;
     tick();
   }
@@ -367,7 +367,7 @@ export function satCard(app, satId) {
       <div data-k="status"></div><div class="grid2" data-k="grid"></div>
       <div class="sec"><h3>Visible passes over Ballard <span>next 3 days</span></h3>${vis.length ? `<div class="rows" style="padding:0">${vis.map((p) => `<div class="row" style="grid-template-columns:1fr auto;padding:8px 4px"><div><div class="t">${esc(day(p.rise))} · ${esc(time(p.rise))}</div>
         <div class="s">rises ${esc(compass(p.riseAz))}, highest ${Math.round(p.maxEl)}° ${esc(compass(p.maxAz))}, sets ${esc(compass(p.setAz))}</div></div><div class="r">${esc(dur((p.set - p.rise) / 1000))}<small>visible</small></div></div>`).join('')}</div>` : '<div class="fine">No visible passes in the next three days (it passes over in daylight or in Earth\'s shadow).</div>'}</div>
-      <div class="actions">${followBtn(app.follows.has('sat', String(s.id)))}<button class="btn" data-act="sky">${icon('sky')} Open sky view</button></div>
+      <div class="actions">${followBtn(app.follows.has('sat', String(s.id)))}<button class="btn" data-act="sky">${icon('sky')} Open sky view</button><button class="btn" data-act="share">${icon('link')} Share</button></div>
       <div class="fine">"Visible" means the satellite is sunlit while the sky over Ballard is dark (sun more than 6° below the horizon), and at least 10° above the horizon.</div></div>`;
     tick();
   }

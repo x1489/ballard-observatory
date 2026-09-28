@@ -16,17 +16,21 @@ export const CAT_COLOR = { fire: [255, 96, 48], medical: [70, 160, 255], collisi
 
 export function createIncidents() {
   let items = [];
-  const S = { visible: true, selected: null, hours: 2 };
-  function ingest(fire, traffic) {
-    const now = Date.now();
+  const S = { visible: true, selected: null, hours: 2, replayT: null };
+  let raw = { fire: null, traffic: null };
+  function ingest(fire, traffic, at = null) {
+    raw = { fire, traffic };
+    const now = at ?? S.replayT ?? Date.now();
     const out = [];
     for (const x of (fire && fire.incidents) || []) {
       if (!isNum(x.lat) || !isNum(x.lon) || !isNum(x.t)) continue;
       const ageH = (now - x.t) / 3600e3;
-      if (!x.active && ageH > S.hours) continue;
-      out.push({ id: `sfd-${x.id}`, kind: 'incident', src: 'fire', rec: x, cat: incidentCategory(x.type), lon: x.lon, lat: x.lat, t: x.t, active: !!x.active, label: x.type });
+      if (S.replayT != null) { if (x.t > now || ageH > S.hours) continue; }
+      else if (!x.active && ageH > S.hours) continue;
+      const active = S.replayT != null ? now - x.t < 25 * 60e3 : !!x.active;
+      out.push({ id: `sfd-${x.id}`, kind: 'incident', src: 'fire', rec: x, cat: incidentCategory(x.type), lon: x.lon, lat: x.lat, t: x.t, active, label: x.type });
     }
-    for (const x of (traffic && traffic.incidents) || []) {
+    for (const x of S.replayT != null ? [] : (traffic && traffic.incidents) || []) {
       if (!isNum(x.lat) || !isNum(x.lon)) continue;
       out.push({ id: `sdot-${x.id}`, kind: 'incident', src: 'traffic', rec: x, cat: 'traffic', lon: x.lon, lat: x.lat, t: x.t || x.start || now, active: true, label: x.type || x.description || 'Traffic incident' });
     }
@@ -35,7 +39,7 @@ export function createIncidents() {
   function produce(ctx) {
     const deck = D();
     if (!S.visible || !items.length) return [];
-    const t = ctx.now, rings = [], cols = [], flashes = [], labels = [];
+    const t = S.replayT ?? ctx.now, rings = [], cols = [], flashes = [], labels = [];
     for (const it of items) {
       const z = ctx.ground(it.lon, it.lat);
       const fade = it.active ? 1 : Math.max(0.25, 1 - (t - it.t) / (S.hours * 3600e3));
@@ -68,6 +72,7 @@ export function createIncidents() {
   return {
     ingest, produce,
     set(opts) { Object.assign(S, opts); },
+    setReplayTime(t) { S.replayT = t; ingest(raw.fire, raw.traffic); },
     list: () => items,
     get: (id) => items.find((x) => x.id === id) || null,
     now(id) { const x = items.find((i) => i.id === id); return x ? { lon: x.lon, lat: x.lat, alt: 0, heading: 0 } : null; },

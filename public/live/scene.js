@@ -233,7 +233,7 @@ export function createScene(container, { year = 2025, onPick, onHover, onUserMov
     S.lastFrame = ts;
     S.frames++;
     S.fps = S.fps * 0.95 + (dt > 0 ? 1000 / dt : 60) * 0.05;
-    const now = Date.now();
+    const now = S.clock ? S.clock() : Date.now(); // Rewind swaps in the replay clock
     const zoom = map.getZoom();
     const center = map.getCenter();
     const ctx = { now, ts, zoom, center, pitch: map.getPitch(), bearing: map.getBearing(), mpp: metersPerPixel(zoom, center.lat), sun: S.sun, look: S.look,
@@ -282,6 +282,7 @@ export function createScene(container, { year = 2025, onPick, onHover, onUserMov
     follow, following: () => S.follow,
     setCloud(c) { S.cloud = c; applyLook(); },
     setSunTime(t) { S.sunTime = t; applyLook(); },
+    setClock(fn) { S.clock = fn || null; },
     setRadar,
     setYear(y) { const s = map.getSource('aerial'); if (s && s.setTiles) s.setTiles([AERIAL(y)]); },
     setBuildings(on) { map.setLayoutProperty('buildings', 'visibility', on ? 'visible' : 'none'); },

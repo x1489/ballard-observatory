@@ -12,10 +12,13 @@ while true; do
     $PY -m bo series || echo "series: some sources failed"
     if $PY -m bo engines; then
       $PY - <<'PY'
+import datetime as dt
 from huggingface_hub import HfApi
+cutoff = dt.date.today() - dt.timedelta(days=8)
+old = [f"_out/replay/{(cutoff - dt.timedelta(days=i)).isoformat()}/*" for i in range(0, 5)]  # Rewind keeps a week
 HfApi().upload_folder(repo_id="x1489/ballard-observatory", repo_type="dataset", folder_path="../lake",
     allow_patterns=["manifest.json", "*/current.parquet", "*/batches/*.parquet", "_out/*", "_out/**/*"],
-    commit_message="local pipeline run")
+    delete_patterns=old, commit_message="local pipeline run")
 print("published")
 PY
     else echo "engines failed; not publishing"; fi
