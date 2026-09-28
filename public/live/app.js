@@ -551,6 +551,7 @@ function onData(ids) {
   canvas.addEventListener('webglcontextrestored', () => { location.reload(); }, false);
   island = createIsland(app, $('#island'));
   await Promise.race([scene.ready, new Promise((r) => setTimeout(r, 6000))]);
+  document.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show'); // credits folded behind (i)
   await store.start();
   sky.load().then(chips).catch(() => {});
   $('#boot').classList.add('done');
