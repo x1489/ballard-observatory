@@ -232,7 +232,7 @@ export function createScene(container, { year = 2025, onPick, onHover, onUserMov
     const zoom = map.getZoom();
     const center = map.getCenter();
     const ctx = { now, ts, zoom, center, pitch: map.getPitch(), bearing: map.getBearing(), mpp: metersPerPixel(zoom, center.lat), sun: S.sun, look: S.look,
-      night: S.look.night, glow: S.look.glow, ground, mobile };
+      night: S.look.night, glow: S.look.glow, ground, mobile, quality: S.quality };
     const layers = [];
     for (const [name, fn] of producers) {
       try { const ls = fn(ctx); if (ls) layers.push(...ls.filter(Boolean)); } catch (err) { console.error(`[scene] ${name}`, err); }
