@@ -1,0 +1,459 @@
+{
+ "civic/reddit-ballard.xml": {
+  "capturedAt": 1790386978883,
+  "url": "https://www.reddit.com/r/Ballard/new/.rss",
+  "status": 200,
+  "bytes": 42013
+ },
+ "civic/reddit-seattle.xml": {
+  "capturedAt": 1790387058202,
+  "url": "https://www.reddit.com/r/Seattle/search.rss?q=ballard&restrict_sr=on&sort=new&t=month",
+  "status": 200,
+  "bytes": 50358
+ },
+ "civic/rss-fireline.xml": {
+  "capturedAt": 1790386962898,
+  "url": "https://fireline.seattle.gov/feed/",
+  "status": 200,
+  "lastModified": "Thu, 24 Sep 2026 18:47:39 GMT",
+  "trimmed": "first items only; content:encoded bodies replaced",
+  "bytes": 13467
+ },
+ "civic/rss-googlenews.xml": {
+  "capturedAt": 1790386963134,
+  "url": "https://news.google.com/rss/search?q=%22Ballard%22+Seattle+when:7d&hl=en-US&gl=US&ceid=US:en",
+  "status": 200,
+  "trimmed": "first items only; content:encoded bodies replaced",
+  "bytes": 34650
+ },
+ "civic/rss-myballard.xml": {
+  "capturedAt": 1790386958065,
+  "url": "https://www.myballard.com/feed/",
+  "status": 200,
+  "lastModified": "Fri, 25 Sep 2026 20:18:29 GMT",
+  "trimmed": "first items only; content:encoded bodies replaced",
+  "bytes": 15224
+ },
+ "civic/rss-parkways.xml": {
+  "capturedAt": 1790386963064,
+  "url": "https://parkways.seattle.gov/feed/",
+  "status": 200,
+  "lastModified": "Wed, 23 Sep 2026 22:19:46 GMT",
+  "trimmed": "first items only; content:encoded bodies replaced",
+  "bytes": 12094
+ },
+ "civic/rss-phinneywood.xml": {
+  "capturedAt": 1790386958457,
+  "url": "https://phinneywood.com/feed/",
+  "status": 200,
+  "lastModified": "Fri, 25 Sep 2026 17:02:50 GMT",
+  "trimmed": "first items only; content:encoded bodies replaced",
+  "bytes": 53838
+ },
+ "civic/rss-sdotblog.xml": {
+  "capturedAt": 1790386963002,
+  "url": "https://sdotblog.seattle.gov/feed/",
+  "status": 200,
+  "lastModified": "Fri, 25 Sep 2026 19:07:47 GMT",
+  "trimmed": "first items only; content:encoded bodies replaced",
+  "bytes": 22729
+ },
+ "civic/rss-seattletimes.xml": {
+  "capturedAt": 1790386958631,
+  "url": "https://www.seattletimes.com/seattle-news/feed/",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:41:41 GMT",
+  "trimmed": "first items only; content:encoded bodies replaced",
+  "bytes": 13748
+ },
+ "civic/rss-spdblotter.xml": {
+  "capturedAt": 1790386962811,
+  "url": "https://spdblotter.seattle.gov/feed/",
+  "status": 200,
+  "lastModified": "Fri, 25 Sep 2026 22:50:19 GMT",
+  "trimmed": "first items only; content:encoded bodies replaced",
+  "bytes": 11157
+ },
+ "civic/scl-events.json": {
+  "capturedAt": 1790386957941,
+  "url": "https://utilisocial.io/datacapable/v2/p/scl/map/events",
+  "status": 200,
+  "bytes": 28332
+ },
+ "civic/scl-stats.json": {
+  "capturedAt": 1790386958039,
+  "url": "https://utilisocial.io/datacapable/v2/p/scl/map/stats",
+  "status": 200,
+  "bytes": 35
+ },
+ "civic/sfd-realtime911-prev.html": {
+  "capturedAt": 1790386956951,
+  "url": "https://web.seattle.gov/sfd/realtime911/getRecsForDatePub.asp?incDate=9%2F24%2F2026&rad1=des",
+  "status": 200,
+  "trimmed": "incident rows only; whitespace between tags collapsed",
+  "bytes": 155605
+ },
+ "civic/sfd-realtime911-today.html": {
+  "capturedAt": 1790386956802,
+  "url": "https://web.seattle.gov/sfd/realtime911/getRecsForDatePub.asp?action=Today&incDate=&rad1=des",
+  "status": 200,
+  "trimmed": "incident rows only; whitespace between tags collapsed",
+  "bytes": 128747
+ },
+ "civic/socrata-5ngg-rpne.json": {
+  "capturedAt": 1790386965064,
+  "url": "https://data.seattle.gov/resource/5ngg-rpne.json?$select=servicerequestnumber%2Cwebintakeservicerequests%2Cservicerequeststatusname%2Ccreateddate%2Clocation%2Clatitude%2Clongitude%2Ccommunity_reporting_area&$where=within_circle(latitude_longitude%2C47.6687%2C-122.3847%2C2000)&$order=createddate%20DESC&$limit=40",
+  "status": 200,
+  "lastModified": "Fri, 25 Sep 2026 17:27:52 GMT",
+  "bytes": 12688
+ },
+ "civic/socrata-76t5-zqzr.json": {
+  "capturedAt": 1790386965265,
+  "url": "https://data.seattle.gov/resource/76t5-zqzr.json?$select=permitnum%2Cpermittypedesc%2Cdescription%2Coriginaladdress1%2Cissueddate%2Cstatuscurrent%2Cestprojectcost%2Chousingunitsadded%2Clatitude%2Clongitude%2Clink&$where=within_circle(location1%2C47.6687%2C-122.3847%2C2000)%20AND%20issueddate%20%3E%20'2026-08-26T00%3A00%3A00'&$order=issueddate%20DESC&$limit=200",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:11:06 GMT",
+  "bytes": 15291
+ },
+ "civic/socrata-ium9-iqtc.json": {
+  "capturedAt": 1790386964569,
+  "url": "https://data.seattle.gov/resource/ium9-iqtc.json?$where=within_box(line_string%2C47.7%2C-122.41%2C47.655%2C-122.36)%20AND%20start_date%20%3C%3D%20'2026-09-25T23%3A59%3A59'%20AND%20end_date%20%3E%3D%20'2026-09-25T00%3A00%3A00'&$order=start_date%20DESC&$limit=500",
+  "status": 200,
+  "lastModified": "Fri, 25 Sep 2026 22:21:19 GMT",
+  "bytes": 5126
+ },
+ "civic/socrata-kzjm-xkqj-max.json": {
+  "capturedAt": 1790386956662,
+  "url": "https://data.seattle.gov/resource/kzjm-xkqj.json?$select=max(datetime)%20as%20newest",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:40:52 GMT",
+  "bytes": 38
+ },
+ "civic/socrata-kzjm-xkqj.json": {
+  "capturedAt": 1790386956152,
+  "url": "https://data.seattle.gov/resource/kzjm-xkqj.json?$where=within_circle(report_location%2C47.6687%2C-122.3847%2C2000)%20AND%20datetime%20%3E%20'2026-09-24T18%3A42%3A36'&$order=datetime%20DESC&$limit=100",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:40:52 GMT",
+  "bytes": 3411
+ },
+ "civic/socrata-tazs-3rd5.json": {
+  "capturedAt": 1790386957192,
+  "url": "https://data.seattle.gov/resource/tazs-3rd5.json?$select=report_number%2Creport_date_time%2Coffense_date%2Cnibrs_offense_code_description%2Cnibrs_crime_against_category%2Cblock_address%2Clatitude%2Clongitude%2Cbeat&$where=neighborhood%20in('BALLARD%20NORTH'%2C'BALLARD%20SOUTH')%20AND%20report_date_time%20%3E%20'2026-09-18T18%3A42%3A36'&$order=report_date_time%20DESC&$limit=1000",
+  "status": 200,
+  "lastModified": "Fri, 25 Sep 2026 15:38:35 GMT",
+  "bytes": 19267
+ },
+ "civic/trumba-kalendaro.json": {
+  "capturedAt": 1790386964395,
+  "url": "https://www.trumba.com/calendars/kalendaro.json?search=Ballard%20Branch&days=14",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:33:17 GMT",
+  "trimmed": "descriptions/images/customFields removed",
+  "bytes": 14273
+ },
+ "civic/usgs-notable.json": {
+  "capturedAt": 1790386957878,
+  "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=47.6687&longitude=-122.3847&maxradiuskm=300&starttime=NOW-30days&minmagnitude=2.5&orderby=time&limit=10",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:42:37 GMT",
+  "bytes": 2682
+ },
+ "civic/usgs-recent.json": {
+  "capturedAt": 1790386957381,
+  "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=47.6687&longitude=-122.3847&maxradiuskm=150&starttime=NOW-7days&minmagnitude=1&orderby=time&limit=30",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:42:37 GMT",
+  "bytes": 10705
+ },
+ "civic/visitballard-events.json": {
+  "capturedAt": 1790386963491,
+  "url": "https://www.visitballard.com/wp-json/tribe/events/v1/events?per_page=50&start_date=2026-09-25&end_date=2026-10-02",
+  "status": 200,
+  "trimmed": "page 1; descriptions/excerpts/images/json_ld removed",
+  "bytes": 68017
+ },
+ "move/kcm-alerts.json": {
+  "capturedAt": 1790386919695,
+  "url": "https://s3.amazonaws.com/kcm-alerts-realtime-prod/alerts_enhanced.json",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:41:25 GMT",
+  "trimmed": "Ballard-matching entities + 10 others; informed_entity lists capped at 60",
+  "bytes": 19517
+ },
+ "move/lime-free-bike-status.json": {
+  "capturedAt": 1790386920964,
+  "url": "https://data.lime.bike/api/partners/v2/gbfs/seattle/free_bike_status",
+  "status": 200,
+  "trimmed": "~200 bikes: up to 80 within 800 m, 70 more in the bbox, 20 in the 1 km pad, 20 far away, 10 disabled/reserved",
+  "bytes": 43179
+ },
+ "move/oba-arrivals.json": {
+  "capturedAt": 1790386911602,
+  "url": "https://api.pugetsound.onebusaway.org/api/where/arrivals-and-departures-for-location.json?key=TEST&lat=47.6680&lon=-122.3805&radius=650&minutesBefore=0&minutesAfter=45",
+  "status": 200,
+  "trimmed": "references reduced to the stops/routes/trips the arrivals use; agencies and stopTimes dropped; tripStatus reduced to activeTripId,position,lastKnownLocation,lastLocationUpdateTime,lastUpdateTime,orientation,predicted,scheduleDeviation,vehicleId,phase,status,serviceDate; empty-string/null arrival fields dropped",
+  "bytes": 144101
+ },
+ "move/oba-trips-1_100224.json": {
+  "capturedAt": 1790386919627,
+  "url": "https://api.pugetsound.onebusaway.org/api/where/trips-for-route/1_100224.json?key=TEST&includeStatus=true&includeSchedule=false",
+  "status": 200,
+  "trimmed": "references reduced to routes + the trips the list uses; stops/stopTimes/agencies dropped; status reduced to activeTripId,position,lastKnownLocation,lastLocationUpdateTime,lastUpdateTime,orientation,predicted,scheduleDeviation,vehicleId,phase,status,serviceDate",
+  "bytes": 16250
+ },
+ "move/oba-trips-1_102574.json": {
+  "capturedAt": 1790386917053,
+  "url": "https://api.pugetsound.onebusaway.org/api/where/trips-for-route/1_102574.json?key=TEST&includeStatus=true&includeSchedule=false",
+  "status": 200,
+  "trimmed": "references reduced to routes + the trips the list uses; stops/stopTimes/agencies dropped; status reduced to activeTripId,position,lastKnownLocation,lastLocationUpdateTime,lastUpdateTime,orientation,predicted,scheduleDeviation,vehicleId,phase,status,serviceDate",
+  "bytes": 33882
+ },
+ "move/oba-trips-1_102581.json": {
+  "capturedAt": 1790386914484,
+  "url": "https://api.pugetsound.onebusaway.org/api/where/trips-for-route/1_102581.json?key=TEST&includeStatus=true&includeSchedule=false",
+  "status": 200,
+  "trimmed": "references reduced to routes + the trips the list uses; stops/stopTimes/agencies dropped; status reduced to activeTripId,position,lastKnownLocation,lastLocationUpdateTime,lastUpdateTime,orientation,predicted,scheduleDeviation,vehicleId,phase,status,serviceDate",
+  "bytes": 37051
+ },
+ "move/sdot-camera-heads.json": {
+  "capturedAt": 1790386920224,
+  "url": "HEAD https://www.seattle.gov/trafficcams/images/<file> x8",
+  "trimmed": "status + the 3 headers the source reads",
+  "bytes": 1867
+ },
+ "move/sdot-incidents.json": {
+  "capturedAt": 1790386920920,
+  "url": "https://web.seattle.gov/Travelers/api/Map/Data?zoomId=18&type=1",
+  "status": 200,
+  "bytes": 2360
+ },
+ "move/sdot-links-1990.json": {
+  "capturedAt": 1790386920859,
+  "url": "https://web.seattle.gov/Travelers/api/Map/LinksBySiteID?siteId=1990",
+  "status": 200,
+  "bytes": 698
+ },
+ "move/sdot-links-1991.json": {
+  "capturedAt": 1790386920778,
+  "url": "https://web.seattle.gov/Travelers/api/Map/LinksBySiteID?siteId=1991",
+  "status": 200,
+  "bytes": 690
+ },
+ "water/kc-cso.csv": {
+  "capturedAt": 1790386894280,
+  "url": "https://your.kingcounty.gov/dnrp/library/wastewater/cso/img/CSO_metadata.CSV",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:40:15 GMT",
+  "bytes": 10936
+ },
+ "water/lpms-lock-queue.json": {
+  "capturedAt": 1790386876996,
+  "url": "https://ndc.ops.usace.army.mil/ords/lpms/json/lock_queue_json?in_river=WS&in_lock=01",
+  "status": 200,
+  "trimmed": "rows with arrivalDate in the last 72 h of capture (the live queue holds ~1000 rows)",
+  "bytes": 20177
+ },
+ "water/lpms-stoppages-ws-synthetic.json": {
+  "capturedAt": 1790387100000,
+  "synthetic": true,
+  "url": "https://ndc.ops.usace.army.mil/ords/lpms/stall_stoppage_json (format only)",
+  "trimmed": "SYNTHETIC: no Seattle (WS) stoppage was active at capture time; rows follow the LPMS format documented in tools/research-water.md and the real non-WS rows in lpms-stoppages.json",
+  "bytes": 3510
+ },
+ "water/lpms-stoppages.json": {
+  "capturedAt": 1790386893303,
+  "url": "https://ndc.ops.usace.army.mil/ords/lpms/stall_stoppage_json?begin_date=17092026&end_date=23012027",
+  "status": 200,
+  "trimmed": "every WS (Seattle) row plus 8 rows from other rivers (the nationwide list is ~40 KB)",
+  "bytes": 2398
+ },
+ "water/noaa-currents-PUG1515.json": {
+  "capturedAt": 1790386876581,
+  "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=PUG1515&bin=1&product=currents_predictions&begin_date=20260925+07%3A00&range=48&units=english&time_zone=gmt&interval=MAX_SLACK&format=json&application=ballard_live",
+  "status": 200,
+  "bytes": 2010
+ },
+ "water/noaa-curve-9447130.json": {
+  "capturedAt": 1790386876038,
+  "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=9447130&product=predictions&interval=6&begin_date=20260925+07%3A00&range=45&datum=MLLW&units=english&time_zone=gmt&format=json&application=ballard_live",
+  "status": 200,
+  "bytes": 16725
+ },
+ "water/noaa-hilo-9447265.json": {
+  "capturedAt": 1790386875596,
+  "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=9447265&product=predictions&interval=hilo&begin_date=20260925+07%3A00&range=72&datum=MLLW&units=english&time_zone=gmt&format=json&application=ballard_live",
+  "status": 200,
+  "bytes": 548
+ },
+ "water/noaa-wl-9447130.json": {
+  "capturedAt": 1790386876399,
+  "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=9447130&product=water_level&range=24&datum=MLLW&units=english&time_zone=gmt&format=json&application=ballard_live",
+  "status": 200,
+  "bytes": 17124
+ },
+ "water/sdot-bridges.txt": {
+  "capturedAt": 1790386893489,
+  "url": "https://web.seattle.gov/Travelers/api/Map/GetBridgeData",
+  "status": 200,
+  "trimmed": "raw body (double-encoded JSON)",
+  "bytes": 861
+ },
+ "water/socrata-gm8h-9449.json": {
+  "capturedAt": 1790386893586,
+  "url": "https://data.seattle.gov/resource/gm8h-9449.json?$select=entityname%2Copendatetime%2Cclosedatetime%2Cminutesopen&$where=entityname%20in('Ballard'%2C'Fremont')%20AND%20opendatetime%20%3E%3D%20'2026-09-16T18%3A41%3A15'&$order=opendatetime%20DESC&$limit=1000",
+  "status": 200,
+  "lastModified": "Fri, 25 Sep 2026 09:47:32 GMT",
+  "bytes": 23189
+ },
+ "water/usace-lake.json": {
+  "capturedAt": 1790386876787,
+  "url": "https://public.crohms.org/dd/common/web_service/webexec/getjson?query=%5B%22LWSC.Elev-Lake.Inst.15Minutes.0.IRIDIUM-REV%22%2C%22LWSC.Flow.Ave.~1Day.1Day.CENWS-COMPUTED-RAW%22%5D&backward=3d&timezone=GMT",
+  "status": 200,
+  "bytes": 9449
+ },
+ "water/wdfw-salmon.html": {
+  "capturedAt": 1790386894056,
+  "url": "https://wdfw.wa.gov/fishing/reports/counts/lake-washington",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:20:32 GMT",
+  "trimmed": "the lw-*-counts tables only",
+  "bytes": 28324
+ },
+ "weather/afd.json": {
+  "capturedAt": 1790386862959,
+  "url": "https://api.weather.gov/products/types/AFD/locations/SEW/latest",
+  "status": 200,
+  "bytes": 5728
+ },
+ "weather/airnow-reportingarea.dat": {
+  "capturedAt": 1790386865566,
+  "url": "https://files.airnowtech.org/airnow/today/reportingarea.dat",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:28:18 GMT",
+  "trimmed": "Seattle-Bellevue-Kent Valley lines plus 4 other WA lines (the full file is ~1.8 MB)",
+  "bytes": 4265
+ },
+ "weather/iem-n0q.json": {
+  "capturedAt": 1790386865334,
+  "url": "https://mesonet.agron.iastate.edu/data/gis/images/4326/USCOMP/n0q_0.json",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:38:42 GMT",
+  "bytes": 136
+ },
+ "weather/ndbc-WPOW1.cwind": {
+  "capturedAt": 1790386862464,
+  "url": "https://www.ndbc.noaa.gov/data/realtime2/WPOW1.cwind",
+  "status": 206,
+  "lastModified": "Sat, 26 Sep 2026 01:10:23 GMT",
+  "trimmed": "Range bytes=0-1999 exactly as the source requests it",
+  "bytes": 2000
+ },
+ "weather/ndbc-WPOW1.txt": {
+  "capturedAt": 1790386862562,
+  "url": "https://www.ndbc.noaa.gov/data/realtime2/WPOW1.txt",
+  "status": 206,
+  "lastModified": "Sat, 26 Sep 2026 01:10:21 GMT",
+  "trimmed": "Range bytes=0-5999 exactly as the source requests it",
+  "bytes": 6000
+ },
+ "weather/nws-alerts-wa.json": {
+  "capturedAt": 1790386860523,
+  "url": "https://api.weather.gov/alerts/active?area=WA",
+  "status": 200,
+  "trimmed": "first 6 features of the statewide list (richer shapes than the Ballard zones)",
+  "bytes": 23092
+ },
+ "weather/nws-alerts.json": {
+  "capturedAt": 1790386859796,
+  "url": "https://api.weather.gov/alerts/active?zone=WAZ315,WAC033,PZZ135",
+  "status": 200,
+  "bytes": 2992
+ },
+ "weather/nws-forecast.json": {
+  "capturedAt": 1790386859174,
+  "url": "https://api.weather.gov/gridpoints/SEW/124,71/forecast",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 00:59:58 GMT",
+  "bytes": 7609
+ },
+ "weather/nws-obs-AS437.json": {
+  "capturedAt": 1790386862427,
+  "url": "https://api.weather.gov/stations/AS437/observations/latest",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:10:58 GMT",
+  "bytes": 2366
+ },
+ "weather/nws-obs-AW337.json": {
+  "capturedAt": 1790386861065,
+  "url": "https://api.weather.gov/stations/AW337/observations/latest",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:16:58 GMT",
+  "bytes": 2365
+ },
+ "weather/nws-obs-E7826.json": {
+  "capturedAt": 1790386861552,
+  "url": "https://api.weather.gov/stations/E7826/observations/latest",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:15:58 GMT",
+  "bytes": 2368
+ },
+ "weather/nws-obs-F8372.json": {
+  "capturedAt": 1790386861989,
+  "url": "https://api.weather.gov/stations/F8372/observations/latest",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:19:58 GMT",
+  "bytes": 2367
+ },
+ "weather/open-meteo.json": {
+  "capturedAt": 1790386858383,
+  "url": "https://api.open-meteo.com/v1/forecast?latitude=47.6687&longitude=-122.3847&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m,is_day,visibility,uv_index,pressure_msl&hourly=temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,uv_index,cloud_cover&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,uv_index_max,sunrise,sunset&minutely_15=precipitation,weather_code&forecast_minutely_15=12&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=America%2FLos_Angeles&forecast_days=7&forecast_hours=24",
+  "status": 200,
+  "bytes": 4211
+ },
+ "weather/purpleair-pas.csv": {
+  "capturedAt": 1790386865852,
+  "url": "https://airfire-data-exports.s3.us-west-2.amazonaws.com/maps/purple_air/v4/pas.csv",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:01:45 GMT",
+  "trimmed": "header + every row in the Ballard bbox + 5 rows within 3 km outside it",
+  "bytes": 2367
+ },
+ "weather/pzz135.txt": {
+  "capturedAt": 1790386862623,
+  "url": "https://tgftp.nws.noaa.gov/data/forecasts/marine/coastal/pz/pzz135.txt",
+  "status": 200,
+  "lastModified": "Fri, 25 Sep 2026 21:03:50 GMT",
+  "bytes": 1368
+ },
+ "weather/swpc-kp-1m.json": {
+  "capturedAt": 1790386865232,
+  "url": "https://services.swpc.noaa.gov/json/planetary_k_index_1m.json",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:38:19 GMT",
+  "bytes": 27808
+ },
+ "weather/swpc-kp-3h.json": {
+  "capturedAt": 1790386865311,
+  "url": "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json",
+  "status": 200,
+  "lastModified": "Sat, 26 Sep 2026 01:38:16 GMT",
+  "bytes": 4286
+ },
+ "weather/usno-phases-2026-09-25.json": {
+  "capturedAt": 1790386865077,
+  "url": "https://aa.usno.navy.mil/api/moon/phases/date?date=2026-09-25&nump=3",
+  "status": 200,
+  "bytes": 288
+ },
+ "weather/usno-rstt-2026-09-25.json": {
+  "capturedAt": 1790386863159,
+  "url": "https://aa.usno.navy.mil/api/rstt/oneday?date=2026-09-25&coords=47.6687,-122.3847&tz=-8&dst=true",
+  "status": 200,
+  "bytes": 653
+ },
+ "weather/usno-rstt-2026-09-26.json": {
+  "capturedAt": 1790386864389,
+  "url": "https://aa.usno.navy.mil/api/rstt/oneday?date=2026-09-26&coords=47.6687,-122.3847&tz=-8&dst=true",
+  "status": 200,
+  "bytes": 695
+ }
+}

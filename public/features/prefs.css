@@ -1,0 +1,20 @@
+/* Settings (features/prefs.js) */
+.prefs-off { display: none !important; }
+.pf-sec { margin: 6px 0 10px; }
+.pf-sec-t { font-size: 12px; font-weight: 700; color: var(--ink); margin: 8px 0 2px; }
+.pf-card { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--line); }
+.pf-card .bl-check { flex: 1; min-width: 0; }
+.pf-actions { display: flex; gap: 4px; flex: none; }
+.pf-b { border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); border-radius: 6px; min-width: 30px; height: 30px; cursor: pointer; font-size: 13px; }
+.pf-b:disabled { opacity: .35; cursor: default; }
+.pf-b[aria-pressed="true"] { color: #d97706; border-color: #d97706; }
+#pinned .section-head h2::before { content: "★ "; color: #d97706; }
+/* compact density */
+html.compact .card .body { padding: 6px 12px 10px; }
+html.compact .card > header { padding: 8px 12px 0; }
+html.compact .cards { gap: 8px; }
+html.compact .section { margin-bottom: 18px; }
+html.compact .tile { min-height: 84px; padding: 9px 11px; }
+html.compact .tile .v { font-size: 22px; }
+html.compact .big { font-size: 36px; }
+html.compact .list li { padding: 5px 0; }

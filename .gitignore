@@ -1,0 +1,16 @@
+# local state and data (the lake is published to Hugging Face)
+data/
+lake/
+*.log
+ballard.log
+.backup/
+# environments and builds
+node_modules/
+platform/.venv/
+edge/node_modules/
+edge/src/gen/
+edge/.wrangler/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store

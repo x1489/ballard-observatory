@@ -1,0 +1,90 @@
+[
+ {
+  "id": "CMR-0011",
+  "file": "15_NW_Market_1.jpg",
+  "status": 200,
+  "redirected": false,
+  "headers": {
+   "content-type": "image/jpeg",
+   "content-length": "65036",
+   "last-modified": "Sat, 26 Sep 2026 01:39:04 GMT"
+  }
+ },
+ {
+  "id": "CMR-0322",
+  "file": "24_NW_Market_EW.jpg",
+  "status": 200,
+  "redirected": false,
+  "headers": {
+   "content-type": "image/jpeg",
+   "content-length": "134466",
+   "last-modified": "Sat, 26 Sep 2026 01:39:45 GMT"
+  }
+ },
+ {
+  "id": "CMR-0009",
+  "file": "15_NW_Leary_EW.jpg",
+  "status": 200,
+  "redirected": false,
+  "headers": {
+   "content-type": "image/jpeg",
+   "content-length": "69256",
+   "last-modified": "Sat, 26 Sep 2026 01:39:55 GMT"
+  }
+ },
+ {
+  "id": "CMR-0390",
+  "file": "15_W_Nickerson.jpg",
+  "status": 200,
+  "redirected": false,
+  "headers": {
+   "content-type": "image/jpeg",
+   "content-length": "126099",
+   "last-modified": "Sat, 26 Sep 2026 01:39:26 GMT"
+  }
+ },
+ {
+  "id": "CMR-0013",
+  "file": "15_W_Emerson_NS.jpg",
+  "status": 200,
+  "redirected": false,
+  "headers": {
+   "content-type": "image/jpeg",
+   "content-length": "169900",
+   "last-modified": "Sat, 26 Sep 2026 01:39:16 GMT"
+  }
+ },
+ {
+  "id": "CMR-0253",
+  "file": "Leary_NW_43_EW.jpg",
+  "status": 200,
+  "redirected": false,
+  "headers": {
+   "content-type": "image/jpeg",
+   "content-length": "178000",
+   "last-modified": "Sat, 26 Sep 2026 01:39:22 GMT"
+  }
+ },
+ {
+  "id": "CMR-0007",
+  "file": "15_NW_65_1.jpg",
+  "status": 200,
+  "redirected": false,
+  "headers": {
+   "content-type": "image/jpeg",
+   "content-length": "135875",
+   "last-modified": "Sat, 26 Sep 2026 01:39:49 GMT"
+  }
+ },
+ {
+  "id": "CMR-0008",
+  "file": "15_NW_85_NS.jpg",
+  "status": 200,
+  "redirected": false,
+  "headers": {
+   "content-type": "image/jpeg",
+   "content-length": "119571",
+   "last-modified": "Sat, 26 Sep 2026 01:39:51 GMT"
+  }
+ }
+]

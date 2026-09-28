@@ -1,0 +1,9 @@
+# Ballard Observatory platform (Python 3.11+). All free, open-source.
+duckdb>=1.5
+numpy>=2.0
+scipy>=1.13
+h3>=4.0
+certifi
+huggingface_hub>=1.0
+protobuf>=5
+gtfs-realtime-bindings>=1.0

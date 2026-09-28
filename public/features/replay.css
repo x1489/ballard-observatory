@@ -1,0 +1,39 @@
+/* Replay (features/replay.js) */
+.rp-open { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.rp-open:hover, .rp-open[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+.rp-bar { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 600; background: color-mix(in srgb, var(--panel) 92%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+.map-wrap.replaying .map-note { display: none; }
+/* While replaying, the live layers step back so the past stands out. */
+.map-wrap.replaying .leaflet-marker-pane > .leaflet-marker-icon:not(.rp-marker),
+.map-wrap.replaying .leaflet-overlay-pane, .map-wrap.replaying .leaflet-shadow-pane { opacity: .14; transition: opacity .35s; pointer-events: none; }
+.rp-hint { font-size: 11.5px; color: var(--muted); }
+.rp-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rp-play { width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-ink); cursor: pointer; display: grid; place-items: center; }
+.rp-clock { font: 700 15px var(--mono); font-variant-numeric: tabular-nums; min-width: 150px; }
+.rp-count { font-size: 12px; color: var(--muted); flex: 1; }
+.rp-speed { display: inline-flex; background: var(--chip); border-radius: 8px; padding: 2px; gap: 2px; }
+.rp-speed button { border: 0; background: transparent; color: var(--muted); border-radius: 6px; padding: 3px 8px; font: inherit; font-size: 12px; cursor: pointer; }
+.rp-speed button.on { background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+.rp-x { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); cursor: pointer; display: grid; place-items: center; }
+.rp-track { position: relative; margin: 10px 0 6px; }
+.rp-track input { width: 100%; accent-color: var(--accent); position: relative; z-index: 1; }
+.rp-ticks { position: absolute; left: 8px; right: 8px; top: -3px; height: 6px; pointer-events: none; }
+.rp-ticks i { position: absolute; width: 2px; height: 6px; border-radius: 1px; opacity: .8; }
+.rp-read { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12.5px; }
+.rp-read span { display: inline-flex; align-items: center; gap: 5px; }
+.rp-up { color: var(--warn); }
+.rp-muted { color: var(--muted); }
+.rp-dot { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--c); color: #fff; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+.rp-dot.fresh { animation: ring 1.4s infinite; }
+@media (max-width: 520px) {
+  /* Phones: one control row (play, time, speed, close) and a sideways-scrolling readout, above the attribution. */
+  .rp-bar { left: 6px; right: 6px; bottom: 34px; padding: 8px 10px; }
+  .rp-top { flex-wrap: nowrap; gap: 8px; }
+  .rp-count, .rp-hint { display: none; }
+  .rp-clock { min-width: 0; flex: 1; font-size: 13px; white-space: nowrap; }
+  .rp-play { width: 34px; height: 34px; flex: none; }
+  .rp-read { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; font-size: 12px; }
+  .rp-read::-webkit-scrollbar { display: none; }
+  .rp-read span { flex: none; }
+  .rp-open { font-size: 12px; }
+}

@@ -1,0 +1,80 @@
+# The Ballard Observatory data pipeline: every hour, pull what changed from every public source into the lake,
+# run the discovery engines, and publish the lake and the analytics outputs to Hugging Face (where the live
+# site reads them). Only the compact current tables are downloaded; new change-only batches are appended.
+name: Pipeline
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+concurrency: { group: pipeline, cancel-in-progress: false }
+permissions:
+  contents: write
+env:
+  HF_REPO: x1489/ballard-observatory
+  BO_LAKE: ${{ github.workspace }}/lake
+  BO_OUT: ${{ github.workspace }}/lake/_out
+jobs:
+  # Without the HF_TOKEN secret (a Hugging Face write token) there is nowhere to publish: skip quietly.
+  check:
+    runs-on: ubuntu-latest
+    outputs: { ok: '${{ steps.gate.outputs.ok }}' }
+    steps:
+      - id: gate
+        env: { HF_TOKEN: '${{ secrets.HF_TOKEN }}' }
+        run: |
+          if [ -n "$HF_TOKEN" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; echo "::notice::HF_TOKEN secret not set; pipeline skipped"; fi
+  run:
+    needs: check
+    if: needs.check.outputs.ok == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11', cache: pip, cache-dependency-path: platform/requirements.txt }
+      - run: pip install -r platform/requirements.txt
+      - name: Restore the lake's current tables
+        env: { HF_TOKEN: '${{ secrets.HF_TOKEN }}' }
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import snapshot_download
+          snapshot_download(os.environ["HF_REPO"], repo_type="dataset", local_dir=os.environ["BO_LAKE"],
+                            allow_patterns=["manifest.json", "*/current.parquet", "README.md"], token=os.environ.get("HF_TOKEN"))
+          PY
+      - name: Ingest (incremental)
+        working-directory: platform
+        run: python -m bo ingest || echo "some sources failed; see log"
+      - name: Series and civic sources
+        working-directory: platform
+        run: python -m bo series || echo "some series failed; see log"
+      - name: Discovery engines
+        working-directory: platform
+        run: python -m bo engines
+      - name: Publish to Hugging Face
+        env: { HF_TOKEN: '${{ secrets.HF_TOKEN }}' }
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          HfApi(token=os.environ["HF_TOKEN"]).upload_folder(
+              repo_id=os.environ["HF_REPO"], repo_type="dataset", folder_path=os.environ["BO_LAKE"],
+              allow_patterns=["manifest.json", "*/current.parquet", "*/batches/*.parquet", "_out/*", "_out/**/*"],
+              commit_message=f"pipeline run {os.environ.get('GITHUB_RUN_ID', '')}")
+          PY
+      - name: Record the run (keeps scheduled workflows active)
+        if: github.event_name == 'schedule'
+        run: |
+          python - <<'PY'
+          import json, os
+          run = json.load(open(os.path.join(os.environ["BO_OUT"], "run.json")))
+          os.makedirs("status", exist_ok=True)
+          json.dump(run, open("status/last_run.json", "w"), indent=1)
+          PY
+          if [ "$(date -u +%H)" = "00" ]; then
+            git config user.name "ballard-observatory-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add status/last_run.json
+            git commit -m "status: daily pipeline heartbeat" || true
+            git push || true
+          fi

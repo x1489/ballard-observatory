@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ballard Live</title>
+<meta name="theme-color" content="#0f766e">
+<meta name="description" content="Real-time dashboard for Ballard, Seattle: weather, tides, the Locks, drawbridges, buses, 911, air, events and news.">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ballard">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f766e'/%3E%3Cpath d='M5 21c3 0 3-2 6-2s3 2 6 2 3-2 6-2 3 2 4 2' stroke='white' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='11' r='3.2' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<link rel="stylesheet" href="/style.css">
+<script>
+  try { const t = localStorage.getItem('bl-theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true"></span>
+    <div>
+      <div class="brand-name">Ballard <span>live</span></div>
+      <div class="brand-sub" id="clock-date">Seattle, WA</div>
+    </div>
+  </div>
+  <nav class="jump" aria-label="Sections">
+    <a href="#map-section">Map</a>
+    <a href="#weather">Weather</a>
+    <a href="#water">Water &amp; Locks</a>
+    <a href="#move">Getting around</a>
+    <a href="#safety">Safety</a>
+    <a href="#community">Community</a>
+    <a href="#health">Feeds</a>
+  </nav>
+  <div class="topbar-right">
+    <div class="clock" id="clock" aria-live="off">--:--</div>
+    <a class="health-pill" id="health-pill" href="#health" title="Data feed health">…</a>
+    <button class="icon-btn" id="theme-btn" title="Toggle light/dark" aria-label="Toggle light or dark theme"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18v18z" fill="currentColor"/><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"/></svg></button>
+  </div>
+</header>
+
+<main id="main">
+  <section id="headsup" class="headsup" hidden aria-live="polite"></section>
+
+  <section class="glance" id="glance" aria-label="At a glance"></section>
+
+  <section id="map-section" class="section">
+    <div class="section-head">
+      <h2>Map</h2>
+      <div class="layer-chips" id="layer-chips" role="group" aria-label="Map layers"></div>
+    </div>
+    <div class="map-wrap">
+      <a class="skip-link" href="#weather">Skip past the map</a>
+      <div id="map" role="region" aria-label="Map of Ballard"></div>
+      <div class="map-note" id="map-note"></div>
+    </div>
+  </section>
+
+  <section id="weather" class="section">
+    <div class="section-head"><h2>Weather &amp; sky</h2></div>
+    <div class="cards">
+      <article class="card" data-card="now"><header><h3>Right now</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card wide" data-card="hourly"><header><h3>Next 24 hours</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="daily"><header><h3>7 days</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="nws"><header><h3>NWS forecast</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="water-wx"><header><h3>On the water</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="air"><header><h3>Air quality</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="sun"><header><h3>Sun &amp; moon</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="radar"><header><h3>Radar (KATX)</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="aurora"><header><h3>Aurora watch</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="afd"><header><h3>Forecaster's notes</h3><span class="meta"></span></header><div class="body"></div></article>
+    </div>
+  </section>
+
+  <section id="water" class="section">
+    <div class="section-head"><h2>Water &amp; the Locks</h2></div>
+    <div class="cards">
+      <article class="card wide" data-card="tides"><header><h3>Tide at Shilshole</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="bridges"><header><h3>Drawbridges</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="locks"><header><h3>Ballard Locks</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="lake"><header><h3>Ship Canal level</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="currents"><header><h3>Currents off West Point</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="salmon"><header><h3>Salmon at the Locks</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="cso"><header><h3>Sewer overflows</h3><span class="meta"></span></header><div class="body"></div></article>
+    </div>
+  </section>
+
+  <section id="move" class="section">
+    <div class="section-head"><h2>Getting around</h2></div>
+    <div class="cards">
+      <article class="card wide" data-card="transit"><header><h3>Buses</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="traffic"><header><h3>Drive times</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card wide" data-card="cameras"><header><h3>Traffic cameras</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="incidents"><header><h3>Traffic incidents</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="lime"><header><h3>Scooters &amp; bikes</h3><span class="meta"></span></header><div class="body"></div></article>
+    </div>
+  </section>
+
+  <section id="safety" class="section">
+    <div class="section-head"><h2>Safety</h2></div>
+    <div class="cards">
+      <article class="card wide" data-card="fire"><header><h3>Fire &amp; medical 911</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="outages"><header><h3>Power</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="crime"><header><h3>Police reports</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="quakes"><header><h3>Earthquakes</h3><span class="meta"></span></header><div class="body"></div></article>
+    </div>
+  </section>
+
+  <section id="community" class="section">
+    <div class="section-head"><h2>Community</h2></div>
+    <div class="cards">
+      <article class="card" data-card="open"><header><h3>Open now?</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card wide" data-card="events"><header><h3>Events</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card wide" data-card="news"><header><h3>Local news</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="reddit"><header><h3>Reddit</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="closures"><header><h3>Street closures today</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="requests311"><header><h3>311 requests</h3><span class="meta"></span></header><div class="body"></div></article>
+      <article class="card" data-card="permits"><header><h3>New building permits</h3><span class="meta"></span></header><div class="body"></div></article>
+    </div>
+  </section>
+
+  <section id="health" class="section">
+    <div class="section-head"><h2>Feed health</h2><span class="muted small" id="health-summary"></span></div>
+    <div class="card"><div class="body" id="health-body"></div></div>
+  </section>
+
+  <footer class="foot">
+    Data from NOAA/NWS, Open-Meteo, USNO, AirNow, PurpleAir (via USFS AirFire), NDBC, USACE, WDFW, SDOT, King County Metro (OneBusAway), Lime GBFS,
+    Seattle Open Data, Seattle City Light, USGS, King County, Visit Ballard, Seattle Public Library, and local news feeds.
+    Everything refreshes automatically. For emergencies, call 911.
+  </footer>
+</main>
+
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Camera image">
+  <button class="icon-btn lb-close" aria-label="Close"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  <img alt="">
+  <div class="lb-cap"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script type="module" src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+/* Notifications (features/notify.js): the panel uses the shared .bl-dialog styles. */
+#notify-btn.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }

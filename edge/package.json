@@ -1,0 +1,13 @@
+{
+  "name": "ballard-observatory-edge",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare Worker + Durable Object: the real-time layer of the Ballard Observatory",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.141.0"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "ballard-live",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local real-time dashboard for Ballard, Seattle",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test tests/",
+    "probe": "node tools/probe.mjs"
+  }
+}

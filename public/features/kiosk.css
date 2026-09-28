@@ -1,0 +1,14 @@
+/* Kiosk / TV mode (features/kiosk.js) */
+html.kiosk { font-size: 17px; scroll-behavior: smooth; }
+html.kiosk body { font-size: 15.5px; }
+html.kiosk .jump, html.kiosk .foot, html.kiosk #health, html.kiosk .health-pill, html.kiosk #notify-btn, html.kiosk #prefs-btn, html.kiosk #ask-btn, html.kiosk #share-btn, html.kiosk .rp-open, html.kiosk .hero-share, html.kiosk .sc-filter { display: none !important; }
+html.kiosk main { max-width: none; }
+html.kiosk .glance { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+html.kiosk .tile .v { font-size: 32px; }
+html.kiosk .tile .k { font-size: 12px; }
+html.kiosk .big { font-size: 52px; }
+html.kiosk .card h3 { font-size: 16px; }
+html.kiosk #map { height: min(78vh, 900px); }
+html.kiosk .clock { font-size: 20px; }
+html.kiosk #kiosk-btn { border-color: var(--accent); background: var(--accent-soft); }
+html.kiosk.kiosk-idle, html.kiosk.kiosk-idle * { cursor: none !important; }

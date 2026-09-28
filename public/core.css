@@ -1,0 +1,35 @@
+/* Ballard Live core styles, injected by core.js (style.css is untouched): value flash, the connection indicator,
+   layer-chip counts and the "new" badge. Colors come from style.css's theme variables, so light and dark both work.
+   style.css already turns every animation off under prefers-reduced-motion; flash() and tween() also check it. */
+
+/* A value that just changed (util.flash / data-live-key auto-flash). */
+@keyframes bl-flash {
+  0% { background-color: color-mix(in srgb, var(--accent) 30%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+  100% { background-color: transparent; box-shadow: 0 0 0 3px transparent; }
+}
+.bl-flash { animation: bl-flash 1.2s ease-out; border-radius: 4px; }
+
+/* Connection indicator next to the clock: pulsing LIVE dot (stream), 'polling', 'offline'. */
+.bl-conn { display: inline-flex; align-items: center; gap: 5px; font: 650 10.5px/1 var(--font); letter-spacing: .07em; color: var(--muted); white-space: nowrap; }
+.bl-conn i { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; }
+.bl-conn[data-state="live"] { color: var(--ok); }
+.bl-conn[data-state="live"] i { background: var(--ok); animation: bl-live 2s ease-out infinite; }
+.bl-conn[data-state="down"] { color: var(--danger); }
+.bl-conn[data-state="down"] i { background: var(--danger); }
+@keyframes bl-live {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent); }
+  75%, 100% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--ok) 0%, transparent); }
+}
+/* Narrow screens: the dot alone, so the header keeps its rows (the state stays in the tooltip and for screen readers). */
+@media (max-width: 600px) {
+  .bl-conn .bl-conn-t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+}
+
+/* Live count on a map layer chip (map.js layer.count). Empty = hidden. */
+.chip .n { font-size: 10.5px; font-weight: 650; font-variant-numeric: tabular-nums; color: var(--muted); background: var(--chip); border-radius: 999px; padding: 0 6px; min-width: 18px; text-align: center; line-height: 16px; }
+.chip.on .n { color: var(--ink); }
+.chip .n:empty { display: none; }
+
+/* "new" badge for items that just arrived: <span class="bl-new">new</span> (util.newBadge()). */
+.bl-new { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 1px 6px; border-radius: 6px; background: var(--accent); color: var(--accent-ink); vertical-align: 1px; animation: bl-pop .35s ease-out; }
+@keyframes bl-pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }

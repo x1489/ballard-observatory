@@ -1,0 +1,51 @@
+/* Summary line + Today timeline (features/summary.js) */
+.sum-line { margin: -4px 0 14px; font-size: 13.5px; color: var(--ink); line-height: 1.5; }
+.sum-line .sum-k { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); margin-right: 4px; }
+.sum-line .sum-sep, .dg .sum-sep { color: var(--faint); }
+.sum-warn { color: var(--warn); }
+@media (min-width: 900px) { .sum-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
+
+:root { --tl-night: #1e293b; --tl-twilight: #f59e0b; --tl-day: #fde68a; }
+:root[data-theme="dark"] { --tl-night: #0b1220; --tl-twilight: #b45309; --tl-day: #a3864a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --tl-night: #0b1220; --tl-twilight: #b45309; --tl-day: #a3864a; } }
+.tl-wrap { overflow-x: auto; overscroll-behavior-x: contain; }
+.tl { position: relative; min-width: 600px; padding-top: 4px; }
+.tl-lane { display: grid; grid-template-columns: 64px 1fr; align-items: stretch; min-height: 26px; border-top: 1px solid var(--line); }
+.tl-lane:first-child { border-top: 0; }
+.tl-lane.tall { min-height: 46px; }
+.tl-lane.axis { border-top: 1px solid var(--line); min-height: 18px; }
+.tl-name { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; padding: 6px 6px 0 0; position: sticky; left: 0; z-index: 2; background: var(--panel); }
+.tl-track { position: relative; overflow: visible; }
+.tl-sky { position: absolute; inset: 5px 0; border-radius: 6px; opacity: .85; }
+.tl-mark { position: absolute; top: 2px; transform: translateX(-50%); font-size: 13px; line-height: 1; display: flex; flex-direction: column; align-items: center; color: #d97706; }
+.tl-mark small { font-size: 9.5px; color: var(--ink); background: color-mix(in srgb, var(--panel) 85%, transparent); border-radius: 3px; padding: 0 2px; margin-top: 1px; }
+.tl-svg { position: absolute; inset: 3px 0; width: 100%; height: calc(100% - 6px); }
+.tl-tide-fill { fill: var(--accent); opacity: .12; }
+.tl-tide-line { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+.tl-tide { position: absolute; transform: translateX(-50%); font-size: 10.5px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+.tl-tide small { font-weight: 500; color: var(--muted); }
+.tl-rain { position: absolute; bottom: 3px; background: var(--blue); border-radius: 2px 2px 0 0; }
+.tl-rain.now { height: 22%; bottom: auto; top: 3px; opacity: .9; border-radius: 2px; }
+.tl-none { position: absolute; left: 6px; top: 5px; font-size: 11px; color: var(--faint); }
+.tl-open { position: absolute; top: 4px; bottom: 4px; border-radius: 3px; background: #c2410c; }
+.tl-open.fremont { background: #d97706; top: 12px; }
+.tl-typical { position: absolute; bottom: 3px; background: color-mix(in srgb, #c2410c 35%, transparent); border-radius: 2px 2px 0 0; }
+.tl-restrict { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--muted) 22%, transparent) 0 3px, transparent 3px 7px); }
+.tl-hours { position: absolute; height: 30%; border-radius: 4px; background: var(--chip); color: var(--muted); font-size: 9.5px; line-height: 1.35; padding: 0 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.tl-hours.open { background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+.tl-ev { position: absolute; top: 4px; transform: translateX(-50%); color: var(--accent); text-decoration: none; font-size: 12px; line-height: 1; }
+.tl-alert { position: absolute; top: 4px; bottom: 4px; border-radius: 4px; background: var(--warn-soft); color: var(--warn); font-size: 10px; padding: 1px 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.tl-alert.sev { background: var(--danger-soft); color: var(--danger); }
+.tl-alert.metro { background: var(--accent-soft); color: var(--accent); top: 50%; }
+.tl-tick { position: absolute; top: 2px; transform: translateX(-50%); font-size: 10px; color: var(--muted); white-space: nowrap; }
+.tl-tick.day { font-weight: 700; color: var(--ink); }
+.tl-now { position: absolute; top: 0; bottom: 0; left: calc(64px + (100% - 64px) * var(--now, 25) / 100); width: 2px; background: var(--warn); pointer-events: none; z-index: 1; }
+.tl-now span { position: absolute; top: -2px; left: 4px; font-size: 10px; font-weight: 700; color: var(--warn); background: var(--panel); padding: 0 3px; border-radius: 3px; }
+.dg { margin-top: 10px; font-size: 12.5px; line-height: 1.7; }
+.dg .label { display: inline; margin-right: 6px; }
+.dg-d { font-size: 11px; font-weight: 700; color: var(--muted); }
+.dg-ic { vertical-align: -2px; color: var(--muted); }
+.dg-d.good { color: var(--ok); }
+.dg-d.bad { color: var(--warn); }
+.sky-strip { position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; pointer-events: none; opacity: .9; transition: background 2s; }
+@media (prefers-reduced-motion: reduce) { .sky-strip { transition: none; } }

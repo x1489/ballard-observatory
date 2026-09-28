@@ -1,0 +1,39 @@
+name = "ballard-observatory"
+main = "src/worker.mjs"
+compatibility_date = "2026-09-01"
+workers_dev = true
+preview_urls = false
+
+[build]
+command = "node build.mjs"
+
+[assets]
+directory = "../public"
+binding = "ASSETS"
+run_worker_first = ["/api/*", "/img"]
+not_found_handling = "none"
+
+[[durable_objects.bindings]]
+name = "HUB"
+class_name = "Hub"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Hub"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Fetcher"]
+
+[[migrations]]
+tag = "v3"
+deleted_classes = ["Fetcher"]
+
+[triggers]
+crons = ["*/10 * * * *"]
+
+[vars]
+OBS_BASE = "https://huggingface.co/datasets/x1489/ballard-observatory/resolve/main/_out"
+
+[observability]
+enabled = true
