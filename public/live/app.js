@@ -353,7 +353,7 @@ function clock() {
   $('#clock').textContent = new Date(t).toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: 'numeric', minute: '2-digit', second: '2-digit' }).toLowerCase();
   $('#live').lastChild.textContent = rewind && rewind.on ? 'REWIND' : 'LIVE';
 }
-setInterval(clock, 1000); clock();
+setInterval(clock, 250); clock();
 function weatherChip() {
   const w = store.get('weather');
   if (!w || !w.current) return;
