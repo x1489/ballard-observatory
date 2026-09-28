@@ -81,8 +81,9 @@ export async function mount(root, { args = [], setCrumb }) {
 
   // ---------------------------------------------------------------- live layers
   async function loadLive() {
-    const L = await liveMany(['fire911', 'vehicles', 'bridges', 'cameras', 'aircraft', 'purpleair', 'weather']).catch(() => ({}));
+    const L = await liveMany(['fire911', 'vehicles', 'buses', 'bridges', 'cameras', 'aircraft', 'purpleair', 'weather']).catch(() => ({}));
     const [fire, veh, br, cams, ac] = [L.fire911, L.vehicles, L.bridges, L.cameras, L.aircraft];
+    if (L.buses && L.buses.data) M.setBuses(L.buses.data);
     const now = Date.now();
     const inc = (fire?.data?.incidents || []).filter((x) => isNum(x.lat) && now - x.t < 24 * 3600e3);
     const cat = (t) => (/aid|medic|triaged|low acuity/i.test(t) ? 'medical' : /fire|smoke|rubbish|brush/i.test(t) && !/alarm/i.test(t) ? 'fire' : /motor vehicle|mvi|collision/i.test(t) ? 'collision' : 'other');
@@ -92,7 +93,7 @@ export async function mount(root, { args = [], setCrumb }) {
     const vs = (veh?.data?.vehicles || []).filter((v) => isNum(v.lat));
     M.setData('transit', { type: 'FeatureCollection', features: vs.map((v) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [v.lon, v.lat] },
       properties: { route: v.route, headsign: v.headsign, delay: isNum(v.deviationSec) ? (v.deviationSec > 60 ? `${Math.round(v.deviationSec / 60)} min late` : v.deviationSec < -60 ? `${Math.round(-v.deviationSec / 60)} min early` : 'on time') : null } })) });
-    setN('transit', vs.length);
+    setN('transit', (L.buses && L.buses.data && L.buses.data.vehicles || vs).length);
     const bs = br?.data?.bridges || [];
     M.setData('bridges', { type: 'FeatureCollection', features: bs.map((b) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [b.lon, b.lat] }, properties: { name: b.name, up: !!b.up, since: b.since } })) });
     setN('bridges', bs.filter((b) => b.up).length || null);
@@ -154,7 +155,7 @@ export async function mount(root, { args = [], setCrumb }) {
     const expB = typicalDaily('bridge.ballard_openings');
     k.push({ k: 'Ballard Bridge openings today', v: num(opens), d: expB ? `<span class="muted">typical ${num(expB, 1)}/day</span>` : '' });
     const air = liveData.ac?.data;
-    k.push({ k: 'Aircraft within 8 nm', v: num(air?.airborne ?? null), d: air?.nearest ? `<span class="muted">nearest ${esc(air.nearest.callsign || air.nearest.hex)}</span>` : '' });
+    k.push({ k: 'Aircraft within 20 nm', v: num(air?.airborne ?? null), d: air?.nearest ? `<span class="muted">nearest ${esc(air.nearest.callsign || air.nearest.hex)}</span>` : '' });
     k.push({ k: 'Air quality (PurpleAir AQI)', v: num(aq?.data?.medianAqi ?? null), d: `<span class="muted">${num(aq?.data?.count ?? null)} sensors</span>` });
     const t = wx?.data?.current;
     k.push({ k: 'Temperature', v: t ? `${Math.round(t.tempF)}<small>°F</small>` : '–', d: t ? `<span class="muted">wind ${Math.round(t.windMph)} mph</span>` : '' });

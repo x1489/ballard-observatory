@@ -2,6 +2,11 @@
 // real terrain, 3D buildings from OpenStreetMap heights lit from the actual current sun position, a sky colored by
 // the actual solar elevation, and live/analytic layers. Aircraft are drawn in 3D at their reported altitude (deck.gl).
 import { esc, num, dateTime, ago } from './ui.js';
+import { createAircraft } from '../live/layers/aircraft.js';
+import { createBuses } from '../live/layers/buses.js';
+import { loadTransit } from '../live/transit-data.js';
+import { lookAt } from '../live/sun.js';
+import { metersPerPixel } from '../live/geo.js';
 
 export const CENTER = [-122.3847, 47.6687];
 export const AERIAL_YEARS = [2025, 2023, 2021, 2019, 2017, 2015, 2013, 2012, 2009, 2007, 2005, 2002, 2000, 1998, 1936];
@@ -33,8 +38,6 @@ function skyFor(el) {
   if (el > -12) return { sky: '#141f3a', horizon: '#3a3f63', fog: '#262b40', intensity: 0.15, lightColor: '#a8b8ff' };
   return { sky: '#070b16', horizon: '#141a2c', fog: '#0c1120', intensity: 0.1, lightColor: '#8fa2ff' };
 }
-
-const PLANE = 'data:image/svg+xml;base64,' + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><path fill="#ffffff" stroke="#0b1220" stroke-width="1.5" d="M32 3c2.2 0 3.6 2.2 3.6 5v15.5l20.4 11.7v5.3l-20.4-6.2v12.1l6.2 4.6v4.2L32 52.3l-9.8 2.9V51l6.2-4.6V34.3L8 40.5v-5.3l20.4-11.7V8c0-2.8 1.4-5 3.6-5z"/></svg>`);
 
 export function createMap(container, { onPick, year = 2025 } = {}) {
   const maplibregl = window.maplibregl;
@@ -85,43 +88,57 @@ export function createMap(container, { onPick, year = 2025 } = {}) {
   map.addControl(new maplibregl.ScaleControl({ unit: 'imperial' }), 'bottom-left');
   map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
 
-  // deck.gl overlay for 3D aircraft
-  const overlay = new window.deck.MapboxOverlay({ interleaved: true, layers: [] });
+  // Live 3D traffic: the same models, motion and lighting as the live app (public/live/layers): aircraft as 3D
+  // models of their type at their real altitude, dead-reckoned between reports; King County Metro buses as 3D buses
+  // following their routes. Rendered every animation frame through deck.gl, interleaved with the map.
+  const D = window.deck;
+  const lights = { ambient: new D.AmbientLight({ color: [255, 255, 255], intensity: 1 }), sun: new D.DirectionalLight({ color: [255, 255, 255], intensity: 1.5, direction: [-1, -1, -1] }) };
+  const overlay = new D.MapboxOverlay({ interleaved: true, layers: [], effects: [new D.LightingEffect(lights)], pickingRadius: 6,
+    onClick: (info) => {
+      const o = info && info.object;
+      if (!o || !onPick) return;
+      if (o.kind === 'aircraft') onPick({ type: 'aircraft', data: o.o.rec });
+      else if (o.kind === 'bus') onPick({ type: 'transit', data: { route: o.o.route ? o.o.route.short : '', headsign: o.o.info ? o.o.info.headsign : '', delay: Number.isFinite(o.o.rec.delay) ? (Math.abs(o.o.rec.delay) < 90 ? 'on time' : o.o.rec.delay > 0 ? `${Math.round(o.o.rec.delay / 60)} min late` : `${Math.round(-o.o.rec.delay / 60)} min early`) : null }, lngLat: { lng: o.pos[0], lat: o.pos[1] } });
+    } });
   map.addControl(overlay);
-  const state = { aircraft: [], trails: new Map(), showAircraft: true };
-
-  function setAircraft(list) {
-    const now = Date.now();
-    for (const a of list) {
-      const tr = state.trails.get(a.hex) || [];
-      tr.push([a.lon, a.lat, a.altM, now]);
-      while (tr.length > 40 || (tr.length && now - tr[0][3] > 10 * 60e3)) tr.shift();
-      state.trails.set(a.hex, tr);
-    }
-    for (const k of state.trails.keys()) if (!list.some((a) => a.hex === k)) state.trails.delete(k);
-    state.aircraft = list;
-    renderDeck();
+  const live = { air: createAircraft(), buses: null, pendingBuses: null, show: { aircraft: true, transit: true }, elev: new Map(), look: lookAt(sunPosition().elevation) };
+  loadTransit().then((t) => { live.buses = createBuses(t); if (live.pendingBuses) live.buses.ingest(live.pendingBuses); }).catch(() => {});
+  function ground(lon, lat) {
+    const k = `${Math.round(lon * 5000)}:${Math.round(lat * 5000)}`;
+    if (live.elev.has(k)) return live.elev.get(k);
+    let e = null;
+    try { e = map.queryTerrainElevation([lon, lat]); } catch { e = null; }
+    if (e == null || !Number.isFinite(e)) return 0;
+    if (live.elev.size > 60000) live.elev.clear();
+    live.elev.set(k, e);
+    return e;
   }
-  function renderDeck() {
-    const D = window.deck;
-    if (!state.showAircraft) { overlay.setProps({ layers: [] }); return; }
-    const air = state.aircraft;
-    overlay.setProps({
-      layers: [
-        new D.LineLayer({ id: 'ac-stems', data: air, getSourcePosition: (a) => [a.lon, a.lat, 0], getTargetPosition: (a) => [a.lon, a.lat, a.altM],
-          getColor: [180, 210, 255, 90], getWidth: 1, widthUnits: 'pixels' }),
-        new D.PathLayer({ id: 'ac-trails', data: [...state.trails.entries()].filter(([, t]) => t.length > 1).map(([hex, t]) => ({ hex, path: t.map((p) => [p[0], p[1], p[2]]) })),
-          getPath: (d) => d.path, getColor: [120, 190, 255, 170], getWidth: 2, widthUnits: 'pixels', jointRounded: true, capRounded: true }),
-        new D.IconLayer({ id: 'ac-icons', data: air, pickable: true, billboard: false, sizeUnits: 'meters', sizeMinPixels: 18, sizeMaxPixels: 64,
-          getIcon: () => ({ url: PLANE, width: 64, height: 64, anchorY: 32 }), getPosition: (a) => [a.lon, a.lat, a.altM],
-          getSize: (a) => (a.kind === 'helicopter' ? 70 : a.kind === 'airliner' ? 140 : 90), getAngle: (a) => -(a.track || 0),
-          onClick: (info) => { if (info.object && onPick) onPick({ type: 'aircraft', data: info.object }); } }),
-        new D.TextLayer({ id: 'ac-labels', data: air, getPosition: (a) => [a.lon, a.lat, a.altM], getText: (a) => `${a.callsign || a.reg || a.hex}  ${num(a.altFt)} ft`,
-          getSize: 11, getColor: [235, 242, 250, 230], getPixelOffset: [0, -24], fontFamily: 'Inter, sans-serif', fontWeight: 600,
-          outlineWidth: 2, outlineColor: [10, 14, 19, 220], fontSettings: { sdf: true } }),
-      ],
-    });
+  map.on('sourcedata', (e) => { if (e.sourceId === 'dem' && e.isSourceLoaded) live.elev.clear(); });
+  function lighting() {
+    const s = sunPosition(), L = lookAt(s.elevation), az = (s.azimuth * Math.PI) / 180, el = (Math.max(s.elevation, 3) * Math.PI) / 180;
+    lights.sun.direction = [-Math.sin(az) * Math.cos(el), -Math.cos(az) * Math.cos(el), -Math.sin(el)];
+    lights.sun.intensity = L.sunI; lights.ambient.intensity = L.amb;
+    live.look = L;
+    overlay.setProps({ effects: [new D.LightingEffect(lights)] });
   }
+  lighting();
+  const lightTimer = setInterval(lighting, 60_000);
+  let raf = 0, lastTs = 0;
+  function frame(ts) {
+    raf = requestAnimationFrame(frame);
+    if (document.hidden || ts - lastTs < 1000 / 45) return;
+    lastTs = ts;
+    const zoom = map.getZoom(), center = map.getCenter(), sun = sunPosition();
+    const ctx = { now: Date.now(), ts, zoom, center, pitch: map.getPitch(), bearing: map.getBearing(), mpp: metersPerPixel(zoom, center.lat), sun, look: live.look,
+      night: live.look.night, glow: live.look.glow, ground, mobile: false, quality: 0 };
+    const layers = [];
+    try { if (live.show.transit && live.buses) layers.push(...live.buses.produce(ctx)); } catch (e) { console.error(e); }
+    try { if (live.show.aircraft) layers.push(...live.air.produce(ctx)); } catch (e) { console.error(e); }
+    overlay.setProps({ layers });
+  }
+  raf = requestAnimationFrame(frame);
+  function setAircraft(list) { live.air.ingest({ aircraft: list }); }
+  function setBuses(data) { if (live.buses) live.buses.ingest(data); else live.pendingBuses = data; }
 
   // GeoJSON overlay layers (draped on terrain)
   const LAYERS = {
@@ -184,17 +201,17 @@ export function createMap(container, { onPick, year = 2025 } = {}) {
     map, ready,
     setData: (id, fc) => ready.then(() => map.getSource(id)?.setData(fc)),
     setVisible: (id, on) => {
-      if (id === 'aircraft') { state.showAircraft = on; renderDeck(); return; }
+      if (id === 'aircraft' || id === 'transit') { live.show[id] = on; if (id === 'transit') ready.then(() => vis(id, false)); return; }
       if (id === 'buildings') { map.setLayoutProperty('buildings', 'visibility', on ? 'visible' : 'none'); return; }
       if (id === 'terrain') { map.setTerrain(on ? { source: 'dem', exaggeration: 1.0 } : null); return; }
       ready.then(() => vis(id, on));
     },
     setYear: (y) => { const s = map.getSource('aerial'); if (s && s.setTiles) s.setTiles([aerialURL(y)]); },
-    setAircraft,
+    setAircraft, setBuses,
     setView: (mode) => map.easeTo(mode === '2d' ? { pitch: 0, bearing: 0, duration: 800 } : { pitch: 52, bearing: -12, duration: 800 }),
     flyTo: (lon, lat, zoom = 17) => map.flyTo({ center: [lon, lat], zoom, pitch: 55, speed: 1.2 }),
     sun: () => sunPosition(),
-    destroy: () => { clearInterval(sunTimer); try { map.remove(); } catch { /* ignore */ } },
+    destroy: () => { clearInterval(sunTimer); clearInterval(lightTimer); cancelAnimationFrame(raf); try { map.remove(); } catch { /* ignore */ } },
   };
 }
 

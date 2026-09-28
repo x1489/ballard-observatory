@@ -16,7 +16,7 @@ export async function mount(root, { setCrumb }) {
       <div class="panel"><div class="panel-h"><h3>Weather, next 24 hours</h3><span class="sub" id="wx-s">Open-Meteo · NWS</span></div><div class="panel-b"><div id="wx" class="chart"></div></div></div>
       <div class="panel"><div class="panel-h"><h3>Tide, Shilshole Bay</h3><span class="sub" id="td-s">NOAA CO-OPS 9447130</span></div><div class="panel-b"><div id="td" class="chart"></div></div></div>
       <div class="panel"><div class="panel-h"><h3>Travel times</h3><span class="sub">SDOT</span></div><div id="tt"></div></div>
-      <div class="panel"><div class="panel-h"><h3>Aircraft within 8 nm</h3><span class="sub" id="ac-s">ADS-B</span></div><div id="ac" style="max-height:360px;overflow:auto"></div></div>
+      <div class="panel"><div class="panel-h"><h3>Aircraft within 20 nm</h3><span class="sub" id="ac-s">ADS-B</span></div><div id="ac" style="max-height:360px;overflow:auto"></div></div>
     </div>
     <div class="panel" style="margin-top:14px"><div class="panel-h"><h3>Traffic cameras</h3><span class="sub">SDOT · live still images</span></div>
       <div class="panel-b"><div id="cams" class="grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))"></div></div></div>
