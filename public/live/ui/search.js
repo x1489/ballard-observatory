@@ -33,6 +33,10 @@ export function createSearch(app) {
         for (const st of app.layers.stops.all().filter((x) => x.name.toLowerCase().includes(lq)).slice(0, 5))
           out.push({ t: st.name, s: `Bus stop #${st.id} · live arrivals`, icon: 'bus', fg: 'var(--bus)', bg: 'rgba(255,176,32,.14)', kind: 'Stop', go: ['stop', st.id] });
       }
+      if (app.layers.cameras && lq.length >= 3) {
+        for (const c of app.layers.cameras.list().filter((x) => x.label.toLowerCase().includes(lq)).slice(0, 3))
+          out.push({ t: c.label, s: 'Traffic camera · live image', icon: 'camera', kind: 'Camera', go: ['camera', c.id] });
+      }
       for (const b of ['Ballard', 'Fremont']) if (`${b} bridge`.toLowerCase().includes(lq)) out.push({ t: `${b} Bridge`, s: 'Drawbridge status, openings, camera', icon: 'bridge', fg: 'var(--bridge)', bg: 'rgba(251,146,60,.14)', kind: 'Bridge', go: ['bridge', b] });
       if (/^(iss|space|station|satel)/.test(lq)) { const iss = app.sky.iss(); if (iss) out.push({ t: 'International Space Station', s: 'Where it is and when to see it', icon: 'sat', fg: 'var(--sky)', bg: 'rgba(167,139,250,.14)', kind: 'Sky', go: ['sat', String(iss.id)] }); }
       if (/^(wea|rain|temp|tide|sun)/.test(lq)) out.push({ t: 'Weather now', s: 'Conditions, rain, tide, sunset', icon: 'cloud', fg: 'var(--weather)', bg: 'rgba(125,211,252,.14)', kind: 'Weather', go: ['weather', 'now'] });

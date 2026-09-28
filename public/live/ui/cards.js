@@ -223,6 +223,33 @@ export function stopCard(app, stopId) {
   return { kind: 'stop', id: stopId, mount(el) { root = el; paint(); }, tick, target: () => { const s = stop(); return s ? { lon: s.lon, lat: s.lat, alt: 0, heading: 0 } : null; }, label: () => (stop() || {}).name || 'Stop' };
 }
 
+// ------------------------------------------------------------------ traffic camera
+export function cameraCard(app, id) {
+  let root = null;
+  const cam = () => app.layers.cameras.get(id);
+  function paint() {
+    const c = cam();
+    if (!root) return;
+    if (!c) { root.innerHTML = '<div class="card"><h1>Camera</h1><p class="h-sub">This camera is offline right now.</p></div>'; return; }
+    root.innerHTML = `<div class="card"><div class="kind" style="color:var(--air)">${icon('camera')} Traffic camera · SDOT</div>
+      <h1 style="font-size:24px">${esc(c.label)}</h1><div class="h-sub" data-k="age"></div>
+      <div class="cam" style="margin-top:14px"><img alt="Live traffic camera: ${esc(c.label)}" data-k="img" src="/img?u=${encodeURIComponent(c.url)}&t=${c.lastModified}"></div>
+      <div class="actions"><button class="btn" data-act="track">${icon('target')} Show</button><button class="btn" data-act="share">${icon('link')} Share</button></div>
+      <div class="fine">Seattle Department of Transportation traffic cameras publish a still image about once a minute.</div></div>`;
+    tick();
+  }
+  function tick() {
+    const c = cam();
+    if (!root || !c) return;
+    const age = root.querySelector('[data-k="age"]');
+    if (age) age.textContent = `Updated ${ago(c.lastModified)}`;
+    const img = root.querySelector('[data-k="img"]');
+    const src = `/img?u=${encodeURIComponent(c.url)}&t=${c.lastModified}`;
+    if (img && !img.src.endsWith(src.slice(1))) img.src = src;
+  }
+  return { kind: 'camera', id, mount(el) { root = el; paint(); }, tick, target: () => { const c = cam(); return c ? { lon: c.lon, lat: c.lat, alt: 0, heading: 0 } : null; }, label: () => (cam() || {}).label || 'Camera' };
+}
+
 // ------------------------------------------------------------------ train
 function trainDelay(st) {
   const sch = st.schDep ?? st.schArr, est = st.dep ?? st.arr;
