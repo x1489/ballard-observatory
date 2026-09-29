@@ -110,7 +110,7 @@ export function createScene(container, { year = 2025, onPick, onHover, onUserMov
       const glow = look.glow > 0.05;
       for (const id of ['streetlight', 'streetlight-core']) map.setLayoutProperty(id, 'visibility', glow ? 'visible' : 'none');
       if (glow) { map.setPaintProperty('streetlight', 'line-opacity', 0.34 * look.glow); map.setPaintProperty('streetlight-core', 'line-opacity', 0.6 * look.glow); }
-      map.setLight({ anchor: 'map', position: [1.5, sun.azimuth, Math.max(10, Math.min(88, 90 - Math.max(sun.elevation, 2)))], color: look.light, intensity: look.li });
+      map.setLight({ anchor: 'map', position: [1.5, sun.azimuth, Math.max(10, Math.min(88, 90 - Math.max(sun.elevation, 2)))], color: softLight(look.light), intensity: look.li });
       map.setSky({ 'sky-color': look.sky, 'horizon-color': look.horizon, 'fog-color': look.fog, 'sky-horizon-blend': 0.5, 'horizon-fog-blend': 0.7, 'fog-ground-blend': 0.9, 'atmosphere-blend': look.night ? 0.2 : 0.85 });
     } catch { /* style not ready */ }
     // model lighting: the real sun direction; moonlight-ish at night
@@ -122,6 +122,8 @@ export function createScene(container, { year = 2025, onPick, onHover, onUserMov
     lights.ambient.color = look.night ? [150, 165, 210] : [255, 255, 255];
     overlay.setProps({ effects: [new D.LightingEffect(lights)] });
   }
+  // The map's building light: the sun's colour, but only a hint of it (a full warm light turns pale massing salmon).
+  const softLight = (h) => { const c = hexRGB(h).map((v) => Math.round(v * 0.35 + 255 * 0.65)); return `rgb(${c.join(',')})`; };
   const hexRGB = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
   // Building massing: a light, warm architectural-model tone graded by the light (golden at sunset, dark at night),
   // a touch cooler for taller buildings so the skyline reads.

@@ -103,13 +103,20 @@ const PN = PROFILE.map((p, i) => {
 PN[0] = [0, -0.6, 0.8];
 
 const YEL = [0.84, 0.9, 0.95, 1].map((f) => shade(C.yellow, f));
+/** Which mesh a surface goes to: livery band (tinted per bus), glass (lit from inside at night), or the body. */
+const GLASS = new Set([C.glass, C.glassHi]);
+function pick(c, body, livery, glass) {
+  if (c === 'livery') return [livery, C.white];
+  if (GLASS.has(c)) return [glass, c === C.glassHi ? [255, 255, 255] : [214, 214, 214]];
+  return [body, c];
+}
 const ZONE = { skirt: 0.42, lowerTop: 1.06, rub: 1.12, winTop: 2.34, liveryTop: 2.78 };
 
 /**
  * One body section from x0 (front end) to x1 (rear end). ends: 'cab' | 'rear' | 'joint'. doors: x centres on the
  * curb side (-Z); axles: x of wheel centres; driverWin: the cab has a driver's window; body/livery: target meshes.
  */
-function section(body, livery, { x0, x1, front, rear, doors = [], axles = [] }) {
+function section(body, livery, glass, { x0, x1, front, rear, doors = [], axles = [] }) {
   const R = 0.5; // wheel radius
   const inArch = (x, y) => axles.some((ax) => ((x - ax) / 0.66) ** 2 + ((y - 0.3) / 0.82) ** 2 < 1);
   const inDoor = (x, y, side) => side < 0 && doors.some((dx) => Math.abs(x - dx) < 0.62 && y > 0.36 && y < 2.56);
@@ -164,8 +171,7 @@ function section(body, livery, { x0, x1, front, rear, doors = [], axles = [] }) 
         let k = i + 1;
         while (k < X.length - 1 && straight(X[k]) && straight(X[i]) && colorAt((X[k] + X[k + 1]) / 2, ym, side) === c) k++;
         const xa = X[i], xb = X[k];
-        const target = c === 'livery' ? livery : body;
-        const col = c === 'livery' ? C.white : c;
+        const [target, col] = pick(c, body, livery, glass);
         const a = P(xa, j, side), b = P(xb, j, side), cc = P(xb, j + 1, side), d = P(xa, j + 1, side);
         if (side > 0) target.quad(a, b, cc, d, N(j, 1), N(j, 1), N(j + 1, 1), N(j + 1, 1), col);
         else target.quad(b, a, d, cc, N(j, -1), N(j, -1), N(j + 1, -1), N(j + 1, -1), col);
@@ -209,8 +215,7 @@ function section(body, livery, { x0, x1, front, rear, doors = [], axles = [] }) 
       for (let k = 0; k < ts.length - 1; k++) {
         const ym = (ya + yb) / 2, tm = (ts[k] + ts[k + 1]) / 2;
         const c = kind === 'cab' ? colFront(ym, tm) : colRear(ym, tm);
-        const target = c === 'livery' ? livery : body;
-        const col = c === 'livery' ? C.white : c;
+        const [target, col] = pick(c, body, livery, glass);
         const pt = (y, t) => [x + (kind === 'cab' ? rakeAt(x, y) : 0), y, t * zAt(y) * w];
         const n = kind === 'cab' ? norm([-1, 0.16, 0]) : [1, 0, 0];
         const a = pt(ya, ts[k]), b = pt(ya, ts[k + 1]), cc = pt(yb, ts[k + 1]), d = pt(yb, ts[k]);
@@ -268,19 +273,19 @@ function roofKit(body, pods, trolleyAt = null) {
 }
 
 function build(kind) {
-  const body = new Mesh(), livery = new Mesh();
+  const body = new Mesh(), livery = new Mesh(), glass = new Mesh();
   if (kind === 'bus40' || kind === 'trolley40') {
     const L = 12.2;
-    section(body, livery, { x0: -L / 2, x1: L / 2, front: 'cab', rear: 'rear', doors: [-L / 2 + 1.3, 1.0], axles: [-L / 2 + 2.55, L / 2 - 3.1] });
+    section(body, livery, glass, { x0: -L / 2, x1: L / 2, front: 'cab', rear: 'rear', doors: [-L / 2 + 1.3, 1.0], axles: [-L / 2 + 2.55, L / 2 - 3.1] });
     roofKit(body, kind === 'trolley40' ? [[-2.4, 2.6, 0.32], [3.6, 2.2, 0.3]] : [[-2.3, 3.0, 0.3], [3.3, 2.6, 0.38]], kind === 'trolley40' ? 0.2 : null);
   } else if (kind === 'bus60f' || kind === 'trolley60f') {
-    section(body, livery, { x0: -5.5, x1: 5.5, front: 'cab', rear: 'joint', doors: [-4.2, 2.35], axles: [-3.0, 3.35] });
+    section(body, livery, glass, { x0: -5.5, x1: 5.5, front: 'cab', rear: 'joint', doors: [-4.2, 2.35], axles: [-3.0, 3.35] });
     roofKit(body, [[-1.4, 2.8, 0.32]], kind === 'trolley60f' ? 2.6 : null);
   } else if (kind === 'bus60r') {
-    section(body, livery, { x0: -3.65, x1: 3.65, front: 'joint', rear: 'rear', doors: [-2.3], axles: [1.3] });
+    section(body, livery, glass, { x0: -3.65, x1: 3.65, front: 'joint', rear: 'rear', doors: [-2.3], axles: [1.3] });
     roofKit(body, [[1.3, 2.4, 0.4]]);
   }
-  return { body, livery };
+  return { body, livery, glass };
 }
 
 // ------------------------------------------------------------------ drawbridge leaves (hinge at origin, span toward -X)
@@ -319,8 +324,8 @@ function leafMesh({ len, width, lanes, steel, trim }) {
 fs.mkdirSync(OUT, { recursive: true });
 let total = 0;
 for (const kind of ['bus40', 'trolley40', 'bus60f', 'trolley60f', 'bus60r']) {
-  const { body, livery } = build(kind);
-  for (const [name, m] of [[kind, body], [`${kind}-livery`, livery]]) {
+  const { body, livery, glass } = build(kind);
+  for (const [name, m] of [[kind, body], [`${kind}-livery`, livery], [`${kind}-glass`, glass]]) {
     if (!m.idx.length) continue;
     const b = m.bin();
     fs.writeFileSync(path.join(OUT, `${name}.bin`), b);

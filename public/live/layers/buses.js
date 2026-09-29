@@ -78,7 +78,7 @@ export function createBuses(transit, { deckZ = () => null } = {}) {
       const it = { id, kind: 'bus', o, p, z, boost, pos: [p.lon, p.lat, z], heading: p.heading };
       frame.push(it);
       const body = o.spec.front.replace(/-(teal|blue|green|rapid)$/, '');
-      add(body, it); add(`${body}-livery`, it);
+      add(body, it); add(`${body}-livery`, it); add(`${body}-glass`, it);
       shadow(it, o.spec.artic ? 11.4 : o.spec.length);
       let rear = null;
       if (o.spec.rear) {
@@ -86,7 +86,7 @@ export function createBuses(transit, { deckZ = () => null } = {}) {
         if (o.track && o.track.fix && !p.offRoute) rp = o.track.behind(p.s, ARTIC_GAP * boost, LANE);
         else { const q = ahead(p.lon, p.lat, p.heading + 180, ARTIC_GAP * boost); rp = { lon: q[0], lat: q[1], heading: p.heading }; }
         rear = { ...it, pos: [rp.lon, rp.lat, zAt(rp.lon, rp.lat)], heading: rp.heading };
-        add('bus60r', rear); add('bus60r-livery', rear);
+        add('bus60r', rear); add('bus60r-livery', rear); add('bus60r-glass', rear);
         shadow(rear, 7.6);
       }
       // lights: headlights (+ a pool on the road ahead at night), tail lights
@@ -111,7 +111,15 @@ export function createBuses(transit, { deckZ = () => null } = {}) {
     for (const [name, arr] of byMesh) {
       const m = mesh(name);
       if (!m) continue;
-      const liv = name.endsWith('-livery');
+      const liv = name.endsWith('-livery'), glass = name.endsWith('-glass');
+      if (glass) { // tinted glass by day; after dark the cabin lights shine through (unlit, so it glows)
+        const k = Math.min(1, night * 1.2), mix = (a, b) => Math.round(a + (b - a) * k);
+        const c = [mix(40, 255), mix(52, 226), mix(66, 160), 255];
+        layers.push(new deck.SimpleMeshLayer({ id: `bus-${name}`, data: arr, mesh: m, pickable: true, material: false, getColor: c,
+          getPosition: (d) => d.pos, getOrientation: (d) => [0, 270 - d.heading, 90], getScale: (d) => [d.boost, d.boost, d.boost],
+          updateTriggers: { getPosition: t, getOrientation: t, getScale: t, getColor: k } }));
+        continue;
+      }
       layers.push(new deck.SimpleMeshLayer({ id: `bus-${name}`, data: arr, mesh: m, pickable: true, material: PAINT,
         getPosition: (d) => d.pos, getOrientation: (d) => [0, 270 - d.heading, 90], getScale: (d) => [d.boost, d.boost, d.boost],
         getColor: liv ? (d) => hexRGB(d.o.spec.color) : [255, 255, 255, 255],
