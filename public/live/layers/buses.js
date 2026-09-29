@@ -135,6 +135,12 @@ export function createBuses(transit, { deckZ = () => null } = {}) {
         parameters: { depthCompare: 'always', depthWriteEnabled: false }, updateTriggers: { getSize: S.selected } }));
     }
     const sel = S.selected && frame.find((f) => f.id === S.selected);
+    if (sel && sel.o.rec) { // where Metro last reported it (the drawn bus is the estimate for now)
+      const r = sel.o.rec, gz = ctx.ground(r.lon, r.lat) + 0.4;
+      layers.push(new deck.ScatterplotLayer({ id: 'bus-reported', data: [[r.lon, r.lat, gz]], getPosition: (d) => d, stroked: true, filled: true,
+        radiusUnits: 'pixels', getRadius: 6, getFillColor: [255, 200, 90, 70], lineWidthUnits: 'pixels', getLineWidth: 1.5, getLineColor: [255, 200, 90, 220],
+        parameters: { depthWriteEnabled: false } }));
+    }
     if (sel) {
       layers.push(new deck.ScatterplotLayer({ id: 'bus-ring', data: [sel], getPosition: (d) => [d.pos[0], d.pos[1], d.z + 0.3], stroked: true, filled: false,
         radiusUnits: 'pixels', getRadius: 22 + 5 * Math.sin(t / 300), lineWidthUnits: 'pixels', getLineWidth: 2, getLineColor: [255, 200, 90, 230], parameters: { depthWriteEnabled: false } }));

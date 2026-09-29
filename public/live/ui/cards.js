@@ -151,7 +151,7 @@ export function busCard(app, id) {
       <div class="grid2" data-k="grid"></div>
       <div class="sec"><h3>Next stops <span data-k="upd"></span></h3><div class="timeline" data-k="stops" style="--c:${esc(color)}"></div></div>
       <div class="actions">${followBtn(app.follows.has('bus', id))}<button class="btn" data-act="track">${icon('target')} Track</button><button class="btn" data-act="chase">${icon('chase')} Ride along</button><button class="btn" data-act="share">${icon('link')} Share</button></div>
-      <div class="fine">King County Metro real-time feed (GTFS-rt): a position about every 30 seconds and predicted arrival times; between reports the bus is moved along its route at the pace those predictions imply.
+      <div class="fine">King County Metro real-time feed (GTFS-rt): positions arrive about 30 to 60 seconds after the fact, so the bus you see is where it most likely is now, estimated along its route from those reports, its recent pace and Metro's predicted stop times (usually within a block). The small ring marks its last reported position.
         Vehicle ${esc(id)}: ${esc(spec.desc)}${spec.propulsion === 'trolley' ? ' (electric trolleybus)' : spec.propulsion === 'battery' ? ' (battery-electric)' : ''}.</div></div>`;
     tick();
   }

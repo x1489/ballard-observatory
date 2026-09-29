@@ -383,10 +383,13 @@ function loadBridgeState() {
   }
   return { observingSince: null, lastPoll: 0, bridges: {}, log: [] };
 }
-const bst = loadBridgeState();
+// Loaded on first use, not at import: on the edge, saved state is restored into the store after modules load, and
+// reading it at import would start every restart with an empty openings log (then save that over the real one).
+let bst = null;
 
 async function fetchBridges() {
   const arr = parseBridgeBody(await get('https://web.seattle.gov/Travelers/api/Map/GetBridgeData', { as: 'text', timeout: 10000 }));
+  bst ||= loadBridgeState();
   const out = observeBridges(bst, arr, Date.now());
   writeState(BRIDGE_STATE_FILE, bst);
   return out;

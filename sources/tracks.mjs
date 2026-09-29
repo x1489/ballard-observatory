@@ -167,7 +167,7 @@ async function fetchSatellites({ prev } = {}) {
 }
 
 export default [
-  { id: 'buses', title: 'Buses around Ballard (King County Metro GTFS-rt)', ttl: 20, idleTtl: 600, persist: false, fetch: fetchBuses,
+  { id: 'buses', title: 'Buses around Ballard (King County Metro GTFS-rt)', ttl: 10, idleTtl: 600, persist: false, fetch: fetchBuses,
     metrics: (d) => ({ 'buses.count': d && Array.isArray(d.vehicles) ? d.vehicles.length : null }) },
   { id: 'trains', title: 'Amtrak trains through Ballard (Amtraker)', ttl: 60, idleTtl: 900, persist: false, fetch: fetchTrains },
   { id: 'satellites', title: 'Satellites (CelesTrak)', ttl: 6 * 3600, idleTtl: 12 * 3600, daily: false, deadlineMs: 100000, fetch: fetchSatellites },

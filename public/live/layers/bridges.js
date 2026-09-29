@@ -30,7 +30,11 @@ export function createBridges(geo, ground) {
       const b = B.find((x) => x.id === lb.id || x.name === lb.name);
       if (!b) continue;
       b.up = !!lb.up; b.since = lb.since || null; b.target = b.up ? RAISED : 0;
-      if (!b.seen) { b.angle = b.target; b.seen = true; } // no animation on first load
+      if (!b.seen) { // first look: where the leaves really are now (mid-lift if it changed in the last minute)
+        const moving = b.since ? (Date.now() - b.since) / 1000 * RATE : RAISED;
+        b.angle = b.up ? Math.min(RAISED, moving) : Math.max(0, RAISED - moving);
+        b.seen = true;
+      }
     }
   }
   const centerZ = (b) => ground(b.center[0], b.center[1]);
