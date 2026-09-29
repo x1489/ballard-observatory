@@ -10,7 +10,6 @@ import { createBuses } from './layers/buses.js';
 import { createTrains } from './layers/trains.js';
 import { createBridges } from './layers/bridges.js';
 import { createIncidents } from './layers/incidents.js';
-import { createTrees } from './layers/trees.js';
 import { createStops } from './layers/stops.js';
 import { createCameras } from './layers/cameras.js';
 import { createSky } from './sky.js';
@@ -373,10 +372,10 @@ function popover(id, html) {
   document.querySelectorAll('.pop.open').forEach((x) => x.classList.remove('open'));
   if (!was) { p.innerHTML = html(); p.classList.add('open'); }
 }
-const VIS = { aircraft: true, buses: true, trains: true, bridges: true, incidents: true, trees: true, cameras: true, labels: true, trails: true, buildings: true };
+const VIS = { aircraft: true, buses: true, trains: true, bridges: true, incidents: true, cameras: true, labels: true, trails: true, buildings: true };
 function layersHTML() {
   const L = [['aircraft', 'Aircraft (3D)', 'var(--air)'], ['buses', 'Buses (3D)', 'var(--bus)'], ['trains', 'Trains (3D)', 'var(--train)'], ['bridges', 'Drawbridges', 'var(--bridge)'], ['incidents', '911 calls', 'var(--alert)'],
-    ['trees', 'Trees (3D, city LiDAR survey)', '#4f8a4a'], ['cameras', 'Traffic cameras', '#e6edf3'], ['trails', 'Flight trails', 'var(--air)'], ['labels', 'Labels', '#fff'], ['buildings', '3D buildings', '#cbd5e1']];
+    ['cameras', 'Traffic cameras', '#e6edf3'], ['trails', 'Flight trails', 'var(--air)'], ['labels', 'Labels', '#fff'], ['buildings', '3D buildings', '#cbd5e1']];
   return `<h4>Show</h4>${L.map(([k, l, c]) => `<label><input type="checkbox" data-l="${k}" ${VIS[k] ? 'checked' : ''}><span class="sw" style="background:${c}"></span>${esc(l)}</label>`).join('')}
     <label><input type="checkbox" data-l="radar" ${radarOn ? 'checked' : ''}><span class="sw" style="background:#38bdf8"></span>Rain radar (last hour)</label>
     <h4 style="margin-top:10px">Aerial photos</h4><select id="year">${[2025, 2023, 2021, 2019, 2017, 2015, 2013, 2009, 2002, 1936].map((y) => `<option value="${y}">${y}${y === 2025 ? ' (latest)' : ''}</option>`).join('')}</select>`;
@@ -395,7 +394,6 @@ $('#pop-layers').addEventListener('change', (e) => {
   if (k === 'incidents' && app.layers.incidents) app.layers.incidents.set({ visible: on });
   if (k === 'labels') { air.set({ labels: on }); app.layers.bus && app.layers.bus.set({ labels: on }); }
   if (k === 'trails') air.set({ trails: on });
-  if (k === 'trees' && app.layers.trees) app.layers.trees.set({ visible: on });
   if (k === 'cameras' && app.layers.cameras) app.layers.cameras.set({ visible: on });
   if (k === 'buildings') scene.setBuildings(on);
 });
@@ -532,8 +530,6 @@ function onData(ids) {
   app.layers.bus = transit ? createBuses(transit, { deckZ: bridgeLayer.deckZ }) : createBuses({ tripInfo: () => null, stopAlong: () => null }, {});
   app.layers.train = rail ? createTrains(rail) : { ingest() {}, produce: () => [], list: () => [], count: () => 0, now: () => null, set() {}, select() {} };
   app.layers.incidents = createIncidents();
-  app.layers.trees = createTrees();
-  scene.add('trees', (ctx) => app.layers.trees.produce(ctx));
   if (transit) { app.layers.stops = createStops(transit); scene.add('stops', (ctx) => app.layers.stops.produce(ctx)); }
   app.layers.cameras = createCameras();
   scene.add('cameras', (ctx) => app.layers.cameras.produce(ctx));

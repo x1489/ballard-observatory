@@ -10,8 +10,8 @@ them. Everything runs on free tiers (Cloudflare Workers, Hugging Face, GitHub) w
 
 | | |
 |---|---|
-| **The place, in 3D** | King County's 2025 aerial photography on real terrain, lit by the actual sun (golden hour, dusk, a dark city with glowing streets at night). Buildings of three storeys and up rise as massing; 182,000 trees from Seattle's 2021 LiDAR survey stand at their measured heights in the colours of the season. |
-| **Everything that moves** | Every aircraft within 20 nm as a 3D model of its type, scaled to the real length and wingspan, at its real altitude, banking into turns, with altitude-coloured trails, navigation lights and strobes at night and a ground shadow by day. Every King County Metro bus as a 3D bus of its real type and livery (articulated buses bend, trolleybuses have poles), driving its route at the pace of the predicted stop times. Amtrak trains on the shore line. The Ballard and Fremont bridges' leaves rise when SDOT reports them up. 911 fire and medical calls as beacons. Rain radar. |
+| **The place, in 3D** | King County's 2025 aerial photography on real terrain, lit by the actual sun (golden hour, dusk, a dark city with glowing streets at night). Buildings of three storeys and up rise as massing. |
+| **Everything that moves** | Every aircraft within 20 nm as a 3D model of its type, scaled to the real length and wingspan, at its real altitude, banking into turns, with altitude-coloured trails, navigation lights and strobes at night and a ground shadow by day. Every King County Metro bus as a detailed 3D New Flyer of its real type and livery (articulated buses bend, trolleybuses have poles), casting a shadow on the street, driving its route at the pace of the predicted stop times. Amtrak trains on the shore line. The Ballard and Fremont bridges' leaves rise when SDOT reports them up. 911 fire and medical calls as beacons. Rain radar. |
 | **Tap anything** | Flighty-style tracking cards: a flight's route with progress and estimated arrival, altitude, speed, closest approach to Ballard, the airframe and a photo; a bus's next stops with live predictions; a train's station timeline and when it passes Ballard; a bridge's opening statistics, odds and live camera; the ISS's visible passes; the weather, tide and air. |
 | **Follow & alerts** | Follow anything and its live status rides in the island at the top. Phone alerts (Web Push) arrive with the app closed: a morning brief at 7:30, a bridge going up or down, a fire or rescue call nearby, an aircraft emergency overhead, and "your bus is about 5 minutes from your stop" (tap the bell on any stop). Every bus stop has a live arrivals board. |
 | **Rewind** | Play back the last day: every recorded aircraft, bus and train moving as it did, the bridges opening when they opened, 911 calls appearing when they came in, under the sun as it was. Recorded every 30 s by the relay, published hourly. |
@@ -53,7 +53,8 @@ locally in `data/edge-push.json` and `data/vapid.json` (`data/` is gitignored). 
 `HF_TOKEN` secret (a Hugging Face write token); until it's set the workflow skips.
 
 Regenerating static data: `node tools/build-geo.mjs transit|rail` (Metro GTFS, US DOT rail lines),
-`node tools/build-trees.mjs` (LiDAR tree inventory), `node tools/models/build.mjs` (bus, train and bridge models).
+`node tools/models/vehicles.mjs` (bus and drawbridge meshes), `node tools/models/bake-aircraft.mjs` (aircraft meshes
+baked from the glTF models), `node tools/models/build.mjs` (train models).
 
 ## Free-tier notes
 
@@ -68,7 +69,7 @@ a free OpenSky account, access from airplanes.live, or a small ADS-B receiver fe
 Aerial imagery © EagleView / King County. Terrain: Mapzen terrain tiles on AWS Open Data. Map data © OpenStreetMap
 contributors (OpenFreeMap). Aircraft positions: adsb.lol (ODbL) and adsb.fi; routes: adsbdb; photos:
 planespotters.net. Buses: King County Metro GTFS and GTFS-realtime. Trains: Amtrak via Amtraker. Satellites:
-CelesTrak. Trees: City of Seattle 2021 LiDAR tree inventory. Rail lines: US DOT NTAD. Plus the City of Seattle,
+CelesTrak. Rail lines: US DOT NTAD. Plus the City of Seattle,
 King County, NOAA, NWS, USACE, USGS, Open-Meteo and others listed in the analyst console. 3D aircraft models:
 CC BY 4.0, see `public/models/README.md`.
 

@@ -6,6 +6,9 @@ import { FlightTrack, KT, FPM, FT } from '../motion.js';
 import { aircraftSpec } from '../fleet.js';
 import { D, ADDITIVE, ahead, SILHOUETTE, silhouetteFor, glow, altColor, blink } from './common.js';
 import { toRad } from '../geo.js';
+import { mesh } from '../meshes.js';
+
+const SKIN = { ambient: 0.58, diffuse: 0.6, shininess: 64, specularColor: [90, 94, 100] };
 
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 const MIN_PX = 26;           // an aircraft is never drawn shorter than this on screen
@@ -74,8 +77,8 @@ export function createAircraft() {
       const boost = Math.max(1, Math.min(80, (MIN_PX * ctx.mpp) / o.spec.len));
       const it = { id: hex, kind: 'aircraft', o, s, z, agl, boost, pos: [s.lon, s.lat, z] };
       frame.push(it);
-      if (!byModel.has(o.spec.url)) byModel.set(o.spec.url, []);
-      byModel.get(o.spec.url).push(it);
+      if (!byModel.has(o.spec.model)) byModel.set(o.spec.model, []);
+      byModel.get(o.spec.model).push(it);
       if (o.spec.floats) floats.push(it);
       // trail (rebuilt 4x a second; the layer animates between rebuilds on its own clock)
       if (rebuildTrails && S.trails && o.track.trail.length > 1) {
@@ -118,16 +121,14 @@ export function createAircraft() {
         getIcon: (d) => ({ url: SILHOUETTE[d.icon], width: 128, height: 128, mask: true }), getSize: (d) => d.size, getAngle: (d) => d.angle,
         getColor: (d) => [8, 12, 18, d.a], parameters: { depthWriteEnabled: false } }));
     }
-    for (const [url, arr] of byModel) {
-      layers.push(new deck.ScenegraphLayer({ id: `ac-model-${url}`, data: arr, scenegraph: url, pickable: true, _lighting: 'pbr',
+    const meshLayer = (id, name, data) => {
+      const m = mesh(name);
+      return m && new deck.SimpleMeshLayer({ id, data, mesh: m, pickable: true, material: SKIN, getColor: [255, 255, 255, 255],
         getPosition: (d) => d.pos, getOrientation: (d) => [d.s.pitch, 270 - d.s.heading, 90 - d.s.bank],
-        getScale: (d) => d.o.spec.scale.map((v) => v * d.boost), getColor: S.thermal ? [255, 255, 255, 255] : [255, 255, 255, 255],
-        updateTriggers: { getPosition: t, getOrientation: t, getScale: t } }));
-    }
-    if (floats.length) {
-      layers.push(new deck.ScenegraphLayer({ id: 'ac-floats', data: floats, scenegraph: '/models/floats.glb', _lighting: 'pbr', getPosition: (d) => d.pos,
-        getOrientation: (d) => [d.s.pitch, 270 - d.s.heading, 90 - d.s.bank], getScale: (d) => d.o.spec.scale.map((v) => v * d.boost), updateTriggers: { getPosition: t, getOrientation: t, getScale: t } }));
-    }
+        getScale: (d) => d.o.spec.scale.map((v) => v * d.boost), updateTriggers: { getPosition: t, getOrientation: t, getScale: t } });
+    };
+    for (const [model, arr] of byModel) layers.push(meshLayer(`ac-model-${model}`, model, arr));
+    if (floats.length) layers.push(meshLayer('ac-floats', 'floats', floats));
     if (glows.length) {
       layers.push(new deck.IconLayer({ id: 'ac-glow', data: glows, getPosition: (d) => d.p, getIcon: () => glow(), sizeUnits: 'pixels', getSize: (d) => d.r * 2,
         getColor: (d) => d.c, parameters: ADDITIVE }));

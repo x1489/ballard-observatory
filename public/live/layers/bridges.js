@@ -3,6 +3,7 @@
 // Also the deck profile, so buses crossing the Ballard Bridge ride on the bridge rather than the water.
 import { D, ahead } from './common.js';
 import { distM, bearing, angDiff, toRad } from '../geo.js';
+import { mesh, PAINT } from '../meshes.js';
 
 const RAISED = 74;      // degrees at full opening
 const RATE = 1.15;      // degrees per second (a bascule takes about a minute to open)
@@ -65,7 +66,7 @@ export function createBridges(geo, ground) {
       const zc = centerZ(b), z = zc + b.clearanceM + 1.6;
       for (const [dir, h] of [[b.axis + 180, b.axis], [b.axis, b.axis + 180]]) {
         const hinge = ahead(b.center[0], b.center[1], dir, b.leafLen);
-        const url = `/models/${b.model}.glb`;
+        const url = b.model;
         if (!leaves.has(url)) leaves.set(url, []);
         leaves.get(url).push({ id: b.name, kind: 'bridge', b, pos: [...hinge, z], heading: h, angle: b.angle });
       }
@@ -81,8 +82,9 @@ export function createBridges(geo, ground) {
       layers.push(new deck.SolidPolygonLayer({ id: 'bridge-water', data: water, getPolygon: (d) => d.poly, extruded: false,
         getFillColor: (d) => [L.night ? 12 : 44, L.night ? 20 : 62, L.night ? 26 : 66, 245 * d.a], parameters: { depthWriteEnabled: false } }));
     }
-    for (const [url, arr] of leaves) {
-      layers.push(new deck.ScenegraphLayer({ id: `bridge-${url}`, data: arr, scenegraph: url, pickable: true, _lighting: 'pbr',
+    for (const [name, arr] of leaves) {
+      const m = mesh(name);
+      if (m) layers.push(new deck.SimpleMeshLayer({ id: `bridge-${name}`, data: arr, mesh: m, pickable: true, material: PAINT, getColor: [255, 255, 255, 255],
         getPosition: (d) => d.pos, getOrientation: (d) => [d.angle, 270 - d.heading, 90], updateTriggers: { getOrientation: ctx.now } }));
     }
     return layers;

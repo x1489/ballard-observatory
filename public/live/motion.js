@@ -65,8 +65,16 @@ export class FlightTrack {
       const after = this.raw(now);
       const [de, dn] = enu(after.lon, after.lat, before.lon, before.lat);
       const du = before.alt - after.alt;
-      // Blend out small errors; teleport on large ones (a new track, a bad fix, a long gap).
-      this.corr = Math.hypot(de, dn) < 3000 && Math.abs(du) < 900 ? { t: now, e: de, n: dn, u: du, h: angDiff(after.heading, before.heading) } : null;
+      // Blend out small errors; teleport on large ones (a new track, a bad fix, a long gap). The error is split into
+      // along-track and cross-track parts: cross-track eases out in ~2 s; along-track eases out slowly enough that
+      // the aircraft only ever speeds up or slows down (never visibly slides backwards), however far it was ahead.
+      if (Math.hypot(de, dn) < 3000 && Math.abs(du) < 900) {
+        const hr = toRad(after.heading), ue = Math.sin(hr), un = Math.cos(hr);
+        const al = de * ue + dn * un, cr = de * un - dn * ue;
+        const v = Math.max(after.gs, 1);
+        const tauA = Math.max(2, Math.min(30, Math.abs(al) / (0.7 * v)));
+        this.corr = { t: now, al, cr, ue, un, tauA, u: du, h: angDiff(after.heading, before.heading) };
+      } else this.corr = null;
     }
     return true;
   }
@@ -75,12 +83,14 @@ export class FlightTrack {
   at(now) {
     const s = this.raw(now);
     if (this.corr) {
-      const k = decay((now - this.corr.t) / 1000, 1.4);
-      if (k < 0.002) this.corr = null;
+      const c = this.corr, dt = (now - c.t) / 1000;
+      const ka = decay(dt, c.tauA), kc = decay(dt, 2.0), kh = decay(dt, 1.6), ku = decay(dt, 2.5);
+      if (ka < 0.002 && kc < 0.002 && ku < 0.002) this.corr = null;
       else {
-        [s.lon, s.lat] = offset(s.lon, s.lat, this.corr.e * k, this.corr.n * k);
-        s.alt += this.corr.u * k;
-        s.heading = wrap360(s.heading + this.corr.h * k);
+        const a = c.al * ka, x = c.cr * kc;
+        [s.lon, s.lat] = offset(s.lon, s.lat, a * c.ue + x * c.un, a * c.un - x * c.ue);
+        s.alt += c.u * ku;
+        s.heading = wrap360(s.heading + c.h * kh);
       }
     }
     s.pitch = this.fix.onGround ? 0 : Math.max(-12, Math.min(18, toDeg(Math.atan2(s.vr, Math.max(s.gs, 30)))));

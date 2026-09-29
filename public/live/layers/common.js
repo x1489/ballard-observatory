@@ -57,3 +57,37 @@ export const hexRGB = (h, a = 255) => { const n = parseInt(String(h || '#888888'
 /** Blinking helpers: t in ms. */
 export const blink = (t, periodMs, onMs, phase = 0) => ((t + phase) % periodMs) < onMs;
 export const pulse = (t, periodMs, phase = 0) => 0.5 - 0.5 * Math.cos((((t + phase) % periodMs) / periodMs) * Math.PI * 2);
+
+/**
+ * Sun shadows of vehicles on the ground (what makes them sit on the road instead of hovering): the vehicle's box
+ * (length x width x height) projected along the sun onto the ground, plus a tight dark contact patch under it.
+ * items: { c: [lon, lat], len, wid, h, heading, a (0..255) }; sun: { azimuth, elevation }.
+ */
+export function contactShadow(id, items, ground, sun) {
+  const deck = D();
+  const polys = [];
+  const el = Math.max(sun.elevation, 0);
+  const reach = el > 3 ? Math.min(6, 1 / Math.tan(toRad(el))) : 0; // shadow length per metre of height
+  const sa = toRad(sun.azimuth + 180), se = Math.sin(sa), sn = Math.cos(sa);
+  for (const it of items) {
+    const hr = toRad(it.heading), fe = Math.sin(hr), fn = Math.cos(hr), re = fn, rn = -fe; // forward, right (east, north)
+    const hl = it.len / 2, hw = it.wid / 2, d = reach * it.h;
+    const box = [[hl, hw], [hl, -hw], [-hl, -hw], [-hl, hw]].map(([f, r]) => [f * fe + r * re, f * fn + r * rn]);
+    const pts = d ? [...box, ...box.map(([e, n]) => [e + se * d, n + sn * d])] : box;
+    const toLL = ([e, n], z) => { const p = offset(it.c[0], it.c[1], e, n); return [p[0], p[1], ground(p[0], p[1]) + z]; };
+    if (d) polys.push({ poly: hull(pts).map((q) => toLL(q, 0.3)), a: it.a * 0.55 });
+    polys.push({ poly: box.map(([e, n]) => toLL([e * 1.06, n * 1.12], 0.32)), a: it.a * 0.5 });
+  }
+  return new deck.SolidPolygonLayer({ id, data: polys, getPolygon: (d) => d.poly, extruded: false, _full3d: true,
+    getFillColor: (d) => [10, 14, 20, d.a], parameters: { depthWriteEnabled: false } });
+}
+
+/** Convex hull of 2D points (monotone chain), counter-clockwise. */
+function hull(p) {
+  const pts = [...p].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const x = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = [];
+  for (const q of pts) { while (lo.length >= 2 && x(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  for (const q of pts.reverse()) { while (up.length >= 2 && x(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}

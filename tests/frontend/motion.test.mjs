@@ -119,3 +119,24 @@ test('route fit: accepts a filed route that matches the position, rejects one th
   assert.equal(routeFit({ origin: sna, destination: pdx }, { lat: 47.67, lon: -122.38 }).ok, false);
   assert.equal(routeFit(null, { lat: 47.67, lon: -122.38 }), null);
 });
+
+test('flight track: a late report that puts the aircraft behind never makes it slide backwards', async () => {
+  const { FlightTrack } = await import('../../public/live/motion.js');
+  const { enu } = await import('../../public/live/geo.js');
+  const tr = new FlightTrack('x');
+  const t0 = 1_000_000;
+  tr.update({ t: t0, lon: -122.38, lat: 47.66, alt: 600, gs: 60, trk: 0, vr: 0, onGround: false }, t0);
+  // 12 s later the report shows it actually only covered 400 m (it was slowing): the drawn one is ~320 m ahead
+  const now = t0 + 12000;
+  tr.update({ t: now, lon: -122.38, lat: 47.66 + 400 / 111320, alt: 600, gs: 40, trk: 0, vr: 0, onGround: false }, now);
+  let prev = tr.at(now);
+  for (let ms = 50; ms <= 20000; ms += 50) {
+    const s = tr.at(now + ms);
+    const [, dn] = enu(prev.lon, prev.lat, s.lon, s.lat);
+    assert.ok(dn >= -0.001, `moved backwards by ${(-dn).toFixed(3)} m at +${ms} ms`);
+    prev = s;
+  }
+  // and it converges onto the reported track
+  const [, gap] = enu(tr.raw(now + 60000).lon, tr.raw(now + 60000).lat, tr.at(now + 60000).lon, tr.at(now + 60000).lat);
+  assert.ok(Math.abs(gap) < 5, `still ${gap.toFixed(1)} m off after 60 s`);
+});

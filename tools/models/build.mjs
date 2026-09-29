@@ -316,19 +316,11 @@ function leaf({ len, width, deck = '#4a4d51', steel = '#6f777f', trim = null, tr
 }
 
 // ------------------------------------------------------------------ write
+// Buses and drawbridge leaves are built as vertex-coloured meshes by tools/models/vehicles.mjs.
 const models = {
-  'bus40-teal': bus40(KCM.teal), 'bus40-blue': bus40(KCM.blue), 'bus40-green': bus40(KCM.green), 'bus40-rapid': bus40(KCM.red),
-  'trolley40': bus40(KCM.purple, { trolley: true }),
-  'bus60f-teal': bus60front(KCM.teal), 'bus60f-blue': bus60front(KCM.blue), 'bus60f-green': bus60front(KCM.green), 'bus60f-rapid': bus60front(KCM.red),
-  'bus60r-teal': bus60rear(KCM.teal), 'bus60r-blue': bus60rear(KCM.blue), 'bus60r-green': bus60rear(KCM.green), 'bus60r-rapid': bus60rear(KCM.red),
-  'trolley60f': bus60front(KCM.purple, { trolley: true }), 'trolley60r': bus60rear(KCM.purple),
   'loco-cascades': locomotive(LIV.cascades), 'coach-cascades': coach(LIV.cascades),
   'loco-amtrak': locomotive(LIV.amtrak), 'superliner': coach(LIV.amtrak, { bilevel: true }),
   floats: floats(),
-  // Ballard Bridge: double-leaf bascule on 15th Ave W/NW, 150 ft span (two ~23 m leaves), 21.4 m wide.
-  // Fremont Bridge: double-leaf bascule, ~37 m leaves, painted blue with orange trim.
-  'leaf-ballard': leaf({ len: 23, width: 21.4, steel: '#7d8a86' }),
-  'leaf-fremont': leaf({ len: 37, width: 17, steel: '#2d6bb0', trim: '#e2742f', truss: false }),
 };
 fs.mkdirSync(OUT, { recursive: true });
 let total = 0;

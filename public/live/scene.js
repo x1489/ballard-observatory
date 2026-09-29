@@ -160,19 +160,31 @@ export function createScene(container, { year = 2025, onPick, onHover, onUserMov
     }
   }
 
-  // ---------------------------------------------------------------- terrain elevation (cached on a ~20 m grid)
-  function ground(lon, lat) {
-    const k = `${Math.round(lon * 5000)}:${Math.round(lat * 5000)}`;
+  // ---------------------------------------------------------------- terrain elevation
+  // Sampled from the same terrain tiles the map is drawing (so things sit on the surface you see), cached on a
+  // ~11 m grid and interpolated between samples so heights change smoothly as things move. The cache is dropped when
+  // new terrain tiles arrive or the map switches terrain detail level (zooming), since the surface itself changes.
+  const GRID = 10000; // samples per degree
+  function sample(i, j) {
+    const k = i * 1e6 + j;
     const c = S.elevCache.get(k);
     if (c !== undefined) return c;
     let e = null;
-    try { e = map.queryTerrainElevation([lon, lat]); } catch { e = null; }
-    if (e == null || !Number.isFinite(e)) return 0;
-    if (S.elevCache.size > 60000) S.elevCache.clear();
+    try { e = map.queryTerrainElevation([i / GRID, j / GRID]); } catch { e = null; }
+    if (e == null || !Number.isFinite(e)) return null; // not loaded yet: don't cache
+    if (S.elevCache.size > 80000) S.elevCache.clear();
     S.elevCache.set(k, e);
     return e;
   }
+  function ground(lon, lat) {
+    const x = lon * GRID, y = lat * GRID, i = Math.floor(x), j = Math.floor(y), fx = x - i, fy = y - j;
+    const a = sample(i, j), b = sample(i + 1, j), c = sample(i, j + 1), d = sample(i + 1, j + 1);
+    if (a == null || b == null || c == null || d == null) return a ?? b ?? c ?? d ?? 0;
+    return (a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + d * fx) * fy;
+  }
   map.on('sourcedata', (e) => { if (e.sourceId === 'dem' && e.isSourceLoaded) S.elevCache.clear(); });
+  let demZoom = -1;
+  const checkDemZoom = () => { const z = Math.floor(map.transform.tileZoom ?? map.getZoom()); if (z !== demZoom) { demZoom = z; S.elevCache.clear(); } };
 
   // ---------------------------------------------------------------- camera follow / chase / cockpit
   function follow(getTarget, mode = 'track', opts = {}) {
@@ -219,20 +231,15 @@ export function createScene(container, { year = 2025, onPick, onHover, onUserMov
   for (const ev of ['dragstart', 'zoomstart', 'rotatestart', 'pitchstart']) map.on(ev, userMoved);
 
   // ---------------------------------------------------------------- the frame loop
-  // Frame budget: 60 fps on desktops, 40 on phones; after a minute without a touch, 24 (things still glide, the
-  // battery lasts). Any input restores the full rate.
-  let lastInput = performance.now();
-  for (const ev of ['pointerdown', 'pointermove', 'wheel', 'keydown', 'touchstart']) addEventListener(ev, () => { lastInput = performance.now(); }, { passive: true });
+  // Every display frame (60/120 Hz): nothing is capped, so motion is as smooth as the screen allows.
   function frame(ts) {
     requestAnimationFrame(frame);
     if (S.paused || document.hidden) return;
-    const idle = ts - lastInput > 60_000 && !S.follow && !document.body.classList.contains('director');
-    const minGap = idle ? 1000 / 24 : mobile ? 1000 / 40 : 0;
-    if (minGap && ts - S.lastFrame < minGap) return;
     const dt = ts - S.lastFrame;
     S.lastFrame = ts;
     S.frames++;
-    S.fps = S.fps * 0.95 + (dt > 0 ? 1000 / dt : 60) * 0.05;
+    S.fps = S.fps * 0.95 + (dt > 0 && dt < 1000 ? 1000 / dt : 60) * 0.05;
+    checkDemZoom();
     const now = S.clock ? S.clock() : Date.now(); // Rewind swaps in the replay clock
     const zoom = map.getZoom();
     const center = map.getCenter();
@@ -246,30 +253,6 @@ export function createScene(container, { year = 2025, onPick, onHover, onUserMov
     stepFollow();
     stepRadar(ts);
   }
-
-  // Adaptive quality: phones that can't keep up step down resolution, then terrain, rather than stutter; they step
-  // back up when there's headroom. (Off in QA runs, which render in software.)
-  const QA = /[?&]qa=1/.test(location.search);
-  const LEVELS = [{ px: Math.min(devicePixelRatio || 1, 2), deckPx: mobile ? 1.5 : true, terrain: true }, { px: 1.5, deckPx: 1, terrain: true },
-    { px: 1, deckPx: 1, terrain: true }, { px: 1, deckPx: 1, terrain: false }];
-  let level = 0, slow = 0, fast = 0;
-  function setLevel(n) {
-    level = Math.max(0, Math.min(LEVELS.length - 1, n));
-    const L = LEVELS[level];
-    try { map.setPixelRatio(L.px); } catch { /* older build */ }
-    overlay.setProps({ useDevicePixels: L.deckPx });
-    const hasTerrain = !!map.getTerrain();
-    if (L.terrain !== hasTerrain) { map.setTerrain(L.terrain ? { source: 'dem', exaggeration: 1 } : null); S.elevCache.clear(); }
-    S.quality = level;
-  }
-  if (!QA) setInterval(() => {
-    if (document.hidden || S.paused || !S.lastFrame || performance.now() - S.lastFrame > 1000) return;
-    if (performance.now() - lastInput > 60_000) return; // idle frame cap in force: nothing to judge
-    const cap = mobile ? 40 : 60;
-    if (S.fps < cap * 0.45) { fast = 0; if (++slow >= 2 && level < LEVELS.length - 1) { setLevel(level + 1); slow = 0; } }
-    else if (S.fps > cap * 0.85) { slow = 0; if (++fast >= 4 && level > 0) { setLevel(level - 1); fast = 0; } }
-    else { slow = 0; fast = 0; }
-  }, 4000);
 
   const ready = new Promise((resolve) => { if (styleReady()) resolve(); else map.once('style.load', resolve); });
   ready.then(() => { applyLook(true); requestAnimationFrame(frame); });

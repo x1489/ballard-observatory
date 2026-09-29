@@ -85,9 +85,9 @@ function wsConnect(url) {
 }
 
 // ------------------------------------------------------------------ browser
-export async function launch({ width = 1440, height = 1000, scheme = null, mobile = null, dpr = 1, chromeArgs = [] } = {}) {
+export async function launch({ width = 1440, height = 1000, scheme = null, mobile = null, dpr = 1, chromeArgs = [], gpu = false } = {}) {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'blcdp-'));
-  const chrome = spawn(CHROME, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--no-first-run', '--no-default-browser-check',
+  const chrome = spawn(CHROME, ['--headless=new', ...(gpu ? ['--enable-gpu', '--use-angle=metal', '--ignore-gpu-blocklist'] : ['--disable-gpu']), '--hide-scrollbars', '--no-first-run', '--no-default-browser-check',
     '--remote-debugging-port=0', `--user-data-dir=${profile}`, `--window-size=${width},${height}`, ...chromeArgs, 'about:blank'], { stdio: ['ignore', 'ignore', 'ignore'] });
   let port = 0;
   for (let i = 0; i < 100 && !port; i++) {
