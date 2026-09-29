@@ -127,10 +127,15 @@ export function createScene(container, { year = 2025, onPick, onHover, onUserMov
   const hexRGB = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
   // Building massing: a light, warm architectural-model tone graded by the light (golden at sunset, dark at night),
   // a touch cooler for taller buildings so the skyline reads.
+  // Per-building material tones (concrete, brick, sandstone, grey glass, painted siding, warm stucco), picked from
+  // the footprint's position so a building keeps its colour, then graded by the light.
+  const FACADES = [[0.92, 0.91, 0.89], [0.8, 0.66, 0.58], [0.86, 0.8, 0.7], [0.7, 0.75, 0.8], [0.9, 0.9, 0.92], [0.84, 0.76, 0.66], [0.62, 0.64, 0.66], [0.82, 0.74, 0.66]];
   function buildingColor(look) {
     const tint = hexRGB(look.bldg);
-    const shade = (f) => `rgb(${tint.map((v) => Math.round(Math.min(255, v * f))).join(',')})`;
-    return ['step', ['coalesce', ['get', 'render_height'], 7], shade(0.98), 7, shade(0.95), 16, shade(0.92), 32, shade(0.9)];
+    const col = (m) => `rgb(${tint.map((v, i) => Math.round(Math.min(255, v * m[i] * 1.06))).join(',')})`;
+    // a stable pseudo-random pick per building: its height and footprint size
+    const key = ['%', ['+', ['*', ['coalesce', ['get', 'render_height'], 7], 7], ['*', ['coalesce', ['get', 'render_min_height'], 0], 3], ['to-number', ['id'], 0]], FACADES.length];
+    return ['match', ['floor', key], ...FACADES.flatMap((m, i) => [i, col(m)]), col(FACADES[0])];
   }
 
   // ---------------------------------------------------------------- radar loop (IEM NEXRAD, 50 minutes)
