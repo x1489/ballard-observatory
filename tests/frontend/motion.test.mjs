@@ -50,8 +50,15 @@ test('FlightTrack: a new report is blended in, not jumped to', () => {
   t.update({ t: T0 + 10000, lon, lat, alt: 1000, gs: 100, trk: 90, vr: 0 }, T0 + 10000);
   const right = t.at(T0 + 10000);
   near(distM(before.lon, before.lat, right.lon, right.lat), 0, 1, 'no visible jump at the moment of the update');
-  const later = t.at(T0 + 16000);
-  const [, n] = enu(before.lon, before.lat, later.lon, later.lat);
+  // eased out gently: never sideways faster than 40% of its speed, on the reported track within ~15 s
+  let prev = right;
+  for (let ms = 10050; ms <= 26000; ms += 50) {
+    const s = t.at(T0 + ms);
+    const [, dn] = enu(prev.lon, prev.lat, s.lon, s.lat);
+    assert.ok(dn / 0.05 <= 40.5, `sideways at ${(dn / 0.05).toFixed(1)} m/s`);
+    prev = s;
+  }
+  const [, n] = enu(before.lon, before.lat, prev.lon, prev.lat);
   assert.ok(n > 190, 'converges onto the reported track within seconds');
 });
 

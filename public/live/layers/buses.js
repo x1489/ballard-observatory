@@ -39,7 +39,7 @@ export function createBuses(transit, { deckZ = () => null } = {}) {
       if (!o) { o = { track: null, rec: null, info: null, spec: null }; buses.set(v.id, o); }
       o.rec = v; o.lastSeen = now;
       if (info && (!o.info || o.info.shape !== info.shape)) {
-        o.track = info.line ? new PathTrack(v.id, info.line, { defaultSpeed: 5.5, maxSpeed: 20, lookaheadS: 100 }) : null;
+        o.track = info.line ? new PathTrack(v.id, info.line, { defaultSpeed: 5.5, maxSpeed: 17, lookaheadS: 100 }) : null;
       }
       o.info = info;
       const routeName = info && info.route ? info.route.short : v.route;

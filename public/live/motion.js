@@ -66,14 +66,15 @@ export class FlightTrack {
       const [de, dn] = enu(after.lon, after.lat, before.lon, before.lat);
       const du = before.alt - after.alt;
       // Blend out small errors; teleport on large ones (a new track, a bad fix, a long gap). The error is split into
-      // along-track and cross-track parts: cross-track eases out in ~2 s; along-track eases out slowly enough that
-      // the aircraft only ever speeds up or slows down (never visibly slides backwards), however far it was ahead.
+      // along-track and cross-track parts, each eased out slowly enough that the aircraft only ever speeds up or slows
+      // down a little and drifts sideways gently (never slides backwards or darts), however far off it was drawn.
       if (Math.hypot(de, dn) < 3000 && Math.abs(du) < 900) {
         const hr = toRad(after.heading), ue = Math.sin(hr), un = Math.cos(hr);
         const al = de * ue + dn * un, cr = de * un - dn * ue;
         const v = Math.max(after.gs, 1);
-        const tauA = Math.max(2, Math.min(30, Math.abs(al) / (0.7 * v)));
-        this.corr = { t: now, al, cr, ue, un, tauA, u: du, h: angDiff(after.heading, before.heading) };
+        const tauA = Math.max(2, Math.min(30, Math.abs(al) / ((al > 0 ? 0.7 : 0.45) * v))); // slow down to 30%, speed up by 45% at most
+        const tauC = Math.max(2, Math.min(30, Math.abs(cr) / (0.4 * v))); // sideways drift eases out gently too
+        this.corr = { t: now, al, cr, ue, un, tauA, tauC, u: du, h: angDiff(after.heading, before.heading) };
       } else this.corr = null;
     }
     return true;
@@ -84,7 +85,7 @@ export class FlightTrack {
     const s = this.raw(now);
     if (this.corr) {
       const c = this.corr, dt = (now - c.t) / 1000;
-      const ka = decay(dt, c.tauA), kc = decay(dt, 2.0), kh = decay(dt, 1.6), ku = decay(dt, 2.5);
+      const ka = decay(dt, c.tauA), kc = decay(dt, c.tauC), kh = decay(dt, 1.6), ku = decay(dt, 2.5);
       if (ka < 0.002 && kc < 0.002 && ku < 0.002) this.corr = null;
       else {
         const a = c.al * ka, x = c.cr * kc;
@@ -173,7 +174,7 @@ export class PathTrack {
       const after = this.predicted(now);
       const err = prevShown - after;
       this.corr = Math.abs(err) < 400 ? { t: now, ds: err } : null;
-      if (!this.corr) this.shown = null;
+      if (!this.corr) { this.shown = null; this.shownT = null; }
     }
     return true;
   }
@@ -185,8 +186,15 @@ export class PathTrack {
       if (k < 0.002) this.corr = null; else s += this.corr.ds * k;
     }
     // Hold instead of sliding backwards when the report says we were a little ahead.
-    if (this.shown != null && s < this.shown && this.shown - s < 80) s = this.shown;
+    if (this.shown != null && s < this.shown && this.shown - s < 400) s = this.shown;
+    // Never faster than the vehicle can go: when the plan implies a sprint (stop predictions bunched together, a
+    // report far ahead), catch up at top speed instead of zipping along.
+    if (this.shown != null && this.shownT != null && s > this.shown) {
+      const dt = (now - this.shownT) / 1000;
+      if (dt > 0 && dt < 3) s = Math.min(s, this.shown + this.maxSpeed * dt);
+    }
     this.shown = s;
+    this.shownT = now;
     return s;
   }
 
